@@ -430,15 +430,28 @@
     .cabin-bg {
       position: absolute;
       inset: 0;
-      /* Wood wall */
+      /* 鹅黄色墙壁 */
+      background: #f0e0a0;
+    }
+
+    /* 墙壁砖缝纹理 overlay */
+    .cabin-bg::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      bottom: 40%;
       background:
         repeating-linear-gradient(
           180deg,
-          #3d1f0a 0px,
-          #3d1f0a 30px,
-          #2d1506 30px,
-          #2d1506 32px
+          transparent 0px, transparent 18px,
+          rgba(180,140,60,0.18) 18px, rgba(180,140,60,0.18) 20px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent 0px, transparent 38px,
+          rgba(180,140,60,0.12) 38px, rgba(180,140,60,0.12) 40px
         );
+      pointer-events: none;
     }
 
     .cabin-floor {
@@ -455,19 +468,19 @@
           #4a2810 40px,
           #4a2810 42px
         );
-      border-top: 4px solid #2d1506;
+      border-top: 4px solid #3a1e08;
     }
 
     .cabin-window {
       position: absolute;
-      top: 16px;
+      top: 14px;
       left: 50%;
       transform: translateX(-50%);
       width: 80px;
       height: 60px;
-      background: linear-gradient(135deg, #1a3a6e, #2a5aae, #1a3a6e);
-      border: 4px solid #8b5e3c;
-      box-shadow: inset 0 0 10px rgba(100,160,255,0.3);
+      background: linear-gradient(160deg, #b8d8f8 0%, #dceeff 50%, #b8d8f8 100%);
+      border: 4px solid #8b6914;
+      box-shadow: inset 0 0 8px rgba(180,220,255,0.6), 2px 2px 0 #5a4208;
     }
 
     .cabin-window::before {
@@ -477,7 +490,7 @@
       left: 0;
       right: 0;
       height: 3px;
-      background: #8b5e3c;
+      background: #8b6914;
     }
 
     .cabin-window::after {
@@ -487,13 +500,218 @@
       top: 0;
       bottom: 0;
       width: 3px;
-      background: #8b5e3c;
+      background: #8b6914;
     }
 
-    /* Characters layer */
+    /* 窗帘 */
+    .cabin-curtain-left,
+    .cabin-curtain-right {
+      position: absolute;
+      top: 10px;
+      width: 18px;
+      height: 74px;
+      background: repeating-linear-gradient(
+        180deg,
+        #e8607a 0px, #e8607a 6px,
+        #f08898 6px, #f08898 8px
+      );
+      border: 2px solid #c04060;
+    }
+    .cabin-curtain-left  { left: calc(50% - 58px); border-radius: 0 0 8px 0; }
+    .cabin-curtain-right { left: calc(50% + 40px);  border-radius: 0 0 0 8px; }
+
+    /* 墙上相框 */
+    .wall-photos {
+      position: absolute;
+      top: 18px;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-between;
+      padding: 0 12px;
+      pointer-events: none;
+    }
+
+    .photo-frame {
+      border: 3px solid #8b6914;
+      box-shadow: 2px 2px 0 #5a4208, inset 0 0 0 2px #c8a84a;
+      background: #fff;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 18px;
+      flex-direction: column;
+      gap: 1px;
+      position: relative;
+    }
+
+    .photo-frame::after {
+      content: '';
+      position: absolute;
+      top: -8px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 6px;
+      height: 8px;
+      background: #8b6914;
+      border: 1px solid #5a4208;
+    }
+
+    .photo-frame.small  { width: 38px; height: 32px; font-size: 14px; }
+    .photo-frame.medium { width: 46px; height: 38px; font-size: 16px; }
+
+    .photo-caption {
+      font-size: 4px;
+      color: #888;
+      font-family: 'Press Start 2P', system-ui;
+      line-height: 1;
+    }
+
+    /* 沙发 */
+    .sofa-wrap {
+      position: absolute;
+      bottom: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 82%;
+      max-width: 320px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    /* 沙发靠背 */
+    .sofa-back {
+      width: 100%;
+      height: 28px;
+      background: linear-gradient(180deg, #c0392b 0%, #a93226 100%);
+      border: 3px solid #7b241c;
+      box-shadow: 2px 0 0 #7b241c, -2px 0 0 #7b241c;
+      border-bottom: none;
+      border-radius: 0;
+      position: relative;
+    }
+
+    /* 靠背装饰缝线 */
+    .sofa-back::after {
+      content: '';
+      position: absolute;
+      inset: 4px;
+      border: 1px dashed rgba(255,255,255,0.2);
+    }
+
+    /* 沙发坐垫区 */
+    .sofa-seat {
+      width: 100%;
+      height: 22px;
+      background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%);
+      border: 3px solid #7b241c;
+      border-top: 2px solid #e8736a;
+      display: flex;
+    }
+
+    /* 三格坐垫分隔线 */
+    .sofa-seat::before {
+      content: '';
+      position: absolute;
+      /* handled via box-shadow on children */
+    }
+
+    .sofa-cushion {
+      flex: 1;
+      border-right: 2px solid #a93226;
+      position: relative;
+    }
+    .sofa-cushion:last-child { border-right: none; }
+    .sofa-cushion::after {
+      content: '';
+      position: absolute;
+      inset: 3px;
+      border: 1px dashed rgba(255,255,255,0.15);
+    }
+
+    /* 沙发扶手 */
+    .sofa-arm-left,
+    .sofa-arm-right {
+      position: absolute;
+      bottom: 0;
+      width: 16px;
+      height: 42px;
+      background: linear-gradient(180deg, #c0392b 0%, #922b21 100%);
+      border: 3px solid #7b241c;
+    }
+
+    .sofa-arm-left  { left:  -16px; border-radius: 3px 0 0 3px; }
+    .sofa-arm-right { right: -16px; border-radius: 0 3px 3px 0; }
+
+    /* 沙发腿 */
+    .sofa-legs {
+      display: flex;
+      justify-content: space-between;
+      width: calc(100% - 8px);
+    }
+
+    .sofa-leg {
+      width: 10px;
+      height: 10px;
+      background: #5a2d0c;
+      border: 2px solid #3a1e08;
+    }
+
+    /* 沙发上的角色 */
+    .sofa-characters {
+      position: absolute;
+      bottom: calc(40% + 30px);
+      left: 50%;
+      transform: translateX(-50%);
+      width: 82%;
+      max-width: 320px;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      pointer-events: none;
+    }
+
+    .sofa-char {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 3px;
+      pointer-events: auto;
+      cursor: pointer;
+    }
+
+    .sofa-char-emoji {
+      display: block;
+      filter: drop-shadow(0 2px 4px rgba(0,0,0,0.4));
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .sofa-char-emoji.pig  { font-size: 40px; animation-delay: 0s; }
+    .sofa-char-emoji.cat  { font-size: 32px; animation-delay: -1s; }
+    .sofa-char-emoji.dog  { font-size: 40px; animation-delay: -1.8s; }
+
+    /* cat hunger bar on sofa */
+    .sofa-cat-bar {
+      width: 36px;
+      height: 4px;
+      background: #222;
+      border: 1px solid #555;
+      overflow: hidden;
+      margin-top: 1px;
+    }
+
+    .sofa-cat-bar-fill {
+      height: 100%;
+      background: #ff9d3d;
+      transition: width 0.5s;
+    }
+
+    /* Characters layer (keep for anim targeting, hidden visually) */
     .characters-layer {
       position: absolute;
-      bottom: 38%;
+      bottom: calc(40% + 30px);
       left: 0;
       right: 0;
       display: flex;
@@ -501,6 +719,7 @@
       align-items: flex-end;
       padding: 0 20px;
       pointer-events: none;
+      opacity: 0;        /* invisible, only used for animation targeting */
     }
 
     .character {
@@ -543,18 +762,8 @@
       box-shadow: none;
     }
 
-    /* Cat NPC */
-    .cat-npc {
-      position: absolute;
-      bottom: calc(38% + 4px);
-      right: 20px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 4px;
-      cursor: pointer;
-      z-index: 5;
-    }
+    /* Cat NPC — hidden, sofa version is used instead */
+    .cat-npc { display: none; }
 
     .cat-emoji {
       font-size: 32px;
@@ -588,8 +797,9 @@
     /* Feed cat button */
     .feed-cat-btn {
       position: absolute;
-      bottom: calc(38% + 90px);
-      right: 12px;
+      bottom: calc(40% + 100px);
+      left: 50%;
+      transform: translateX(-50%);
       background: #ff9d3d;
       color: #1a0a2e;
       font-family: 'Press Start 2P', system-ui, sans-serif;
@@ -1548,32 +1758,64 @@
   <div class="game-viewport" id="game-viewport">
     <!-- Cabin background -->
     <div class="cabin-bg">
+      <!-- 窗户 -->
       <div class="cabin-window"></div>
+      <!-- 窗帘 -->
+      <div class="cabin-curtain-left"></div>
+      <div class="cabin-curtain-right"></div>
+      <!-- 墙上相框 -->
+      <div class="wall-photos">
+        <div class="photo-frame small">🐷<div class="photo-caption">小猪</div></div>
+        <div class="photo-frame medium">🐷🐶<div class="photo-caption">合照</div></div>
+        <div class="photo-frame small">🐶<div class="photo-caption">小狗</div></div>
+      </div>
+      <!-- 地板 -->
       <div class="cabin-floor"></div>
     </div>
 
-    <!-- Characters layer -->
-    <div class="characters-layer">
-      <div class="character" id="char-pig" onclick="openCharMenu('pig')">
+    <!-- 沙发 -->
+    <div class="sofa-wrap">
+      <div style="position:relative; width:100%;">
+        <div class="sofa-arm-left"></div>
+        <div class="sofa-arm-right"></div>
+        <div class="sofa-back"></div>
+        <div class="sofa-seat">
+          <div class="sofa-cushion"></div>
+          <div class="sofa-cushion"></div>
+          <div class="sofa-cushion"></div>
+        </div>
+      </div>
+      <div class="sofa-legs">
+        <div class="sofa-leg"></div>
+        <div class="sofa-leg"></div>
+        <div class="sofa-leg"></div>
+        <div class="sofa-leg"></div>
+      </div>
+    </div>
+
+    <!-- 沙发上的角色：小猪 / 小老头猫(中间) / 小狗 -->
+    <div class="sofa-characters">
+      <div class="sofa-char" id="char-pig" onclick="openCharMenu('pig')">
         <div class="char-online-dot" id="pig-online-dot"></div>
-        <span class="character-emoji">🐷</span>
+        <span class="sofa-char-emoji pig">🐷</span>
         <span class="char-label" id="pig-label">小猪</span>
       </div>
-      <div class="character" id="char-dog" onclick="openCharMenu('dog')">
+      <div class="sofa-char" id="cat-npc" onclick="petCat()">
+        <span class="sofa-char-emoji cat" id="cat-emoji">🐱</span>
+        <span class="char-label" style="border-color:#ff9d3d; color:#ff9d3d;">小老头</span>
+        <div class="sofa-cat-bar">
+          <div class="sofa-cat-bar-fill" id="cat-hunger-fill" style="width:80%"></div>
+        </div>
+      </div>
+      <div class="sofa-char" id="char-dog" onclick="openCharMenu('dog')">
         <div class="char-online-dot" id="dog-online-dot"></div>
-        <span class="character-emoji">🐶</span>
+        <span class="sofa-char-emoji dog">🐶</span>
         <span class="char-label" id="dog-label">小狗</span>
       </div>
     </div>
 
-    <!-- Cat NPC -->
-    <div class="cat-npc" id="cat-npc" onclick="petCat()">
-      <span class="cat-emoji" id="cat-emoji">🐱</span>
-      <span class="cat-label">小老头</span>
-      <div class="cat-hunger-bar">
-        <div class="cat-hunger-fill" id="cat-hunger-fill" style="width:80%"></div>
-      </div>
-    </div>
+    <!-- 隐藏的 characters-layer，仅用于动画坐标计算（opacity:0） -->
+    <div class="characters-layer"></div>
 
     <!-- Feed cat button -->
     <button class="feed-cat-btn hidden" id="feed-cat-btn" onclick="feedCat()">
