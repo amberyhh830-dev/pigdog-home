@@ -919,18 +919,95 @@
     /* log item for letter type */
     .log-item.letter-item .log-msg {
       color: #ffd93d;
-      font-style: normal;
     }
 
-    .log-letter-body {
-      margin-top: 4px;
+    .log-letter-link {
+      font-size: 6px;
+      color: #ff6b9d;
+      text-decoration: underline;
+      cursor: pointer;
+      background: none;
+      border: none;
+      padding: 0;
+      font-family: 'Press Start 2P', system-ui;
+      margin-top: 3px;
+      display: inline-block;
+    }
+
+    /* ===== LOG TABS ===== */
+    .log-tabs {
+      display: flex;
+      border-bottom: 2px solid #ff6b9d44;
+      flex-shrink: 0;
+    }
+
+    .log-tab {
+      flex: 1;
+      font-family: 'Press Start 2P', system-ui;
       font-size: 7px;
+      color: #555;
+      background: none;
+      border: none;
+      border-bottom: 3px solid transparent;
+      padding: 10px 8px;
+      cursor: pointer;
+      transition: color 0.1s;
+    }
+
+    .log-tab.active {
+      color: #ffd93d;
+      border-bottom-color: #ffd93d;
+    }
+
+    .log-tab-panel { display: none; }
+    .log-tab-panel.active { display: flex; flex-direction: column; flex: 1; overflow: hidden; }
+
+    /* ===== LETTER BOX ===== */
+    .letter-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .letter-card {
+      margin: 8px 12px;
+      background: #fdf6e3;
+      border: 2px solid #1a0a2e;
+      box-shadow: 3px 3px 0 #1a0a2e;
+      padding: 12px 14px;
+      position: relative;
+    }
+
+    .letter-card-stamp {
+      position: absolute;
+      top: 8px;
+      right: 10px;
+      font-size: 20px;
+      opacity: 0.4;
+      transform: rotate(8deg);
+    }
+
+    .letter-card-from {
+      font-size: 6px;
+      color: #c0392b;
+      font-family: 'Press Start 2P', system-ui;
+      margin-bottom: 6px;
+    }
+
+    .letter-card-body {
+      font-size: 13px;
+      color: #333;
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui;
+      line-height: 1.8;
+      word-break: break-all;
+    }
+
+    .letter-card-time {
+      font-size: 6px;
       color: #aaa;
-      font-family: 'PingFang SC', system-ui;
-      line-height: 1.6;
-      background: #ffffff08;
-      padding: 6px 8px;
-      border-left: 2px solid #ff6b9d44;
+      margin-top: 8px;
+      font-family: 'Press Start 2P', system-ui;
     }
 
     /* ===== LOG DRAWER ===== */
@@ -1486,7 +1563,7 @@
     <!-- Cat NPC -->
     <div class="cat-npc" id="cat-npc" onclick="petCat()">
       <span class="cat-emoji" id="cat-emoji">🐱</span>
-      <span class="cat-label">小橘</span>
+      <span class="cat-label">小老头</span>
       <div class="cat-hunger-bar">
         <div class="cat-hunger-fill" id="cat-hunger-fill" style="width:80%"></div>
       </div>
@@ -1494,7 +1571,7 @@
 
     <!-- Feed cat button -->
     <button class="feed-cat-btn hidden" id="feed-cat-btn" onclick="feedCat()">
-      🐟 喂小橘
+      🐟 喂小老头
     </button>
 
     <!-- Animation layer -->
@@ -1556,7 +1633,7 @@
       </div>
       <div class="action-btn" onclick="menuAction('pet')">
         <span class="btn-emoji">🐾</span>
-        <span class="btn-label">撸小橘</span>
+        <span class="btn-label">撸小老头</span>
         <span class="btn-pts">+8</span>
       </div>
     </div>
@@ -1567,11 +1644,24 @@
 <div class="log-overlay hidden" id="log-overlay" onclick="closeLog(event)">
   <div class="log-drawer">
     <div class="log-header">
-      <span class="log-title">📖 过去24小时的互动</span>
+      <span class="log-title">📖 小屋记录</span>
       <button class="log-close" onclick="closeLog()">×</button>
     </div>
-    <div class="log-list" id="log-list">
-      <div class="log-empty">暂无互动记录</div>
+    <div class="log-tabs">
+      <button class="log-tab active" id="tab-log" onclick="switchLogTab('log')">互动日志</button>
+      <button class="log-tab" id="tab-letters" onclick="switchLogTab('letters')">💌 信箱</button>
+    </div>
+    <!-- 互动日志 panel -->
+    <div class="log-tab-panel active" id="panel-log">
+      <div class="log-list" id="log-list">
+        <div class="log-empty">暂无互动记录</div>
+      </div>
+    </div>
+    <!-- 信箱 panel -->
+    <div class="log-tab-panel" id="panel-letters">
+      <div class="letter-list" id="letter-list">
+        <div class="log-empty">还没有信件 💌</div>
+      </div>
     </div>
   </div>
 </div>
@@ -1629,13 +1719,13 @@ let state = {
 };
 
 const ACTION_CONFIG = {
-  fart:   { emoji: '💨', pts: 5,  msg: '放了个臭屁朝你~',        anim: 'fart'   },
+  fart:   { emoji: '💨', pts: 5,  msg: '朝你放了个屁~',          anim: 'fart'   },
   water:  { emoji: '🥤', pts: 10, msg: '给你喂水喝~',            anim: 'arc'    },
   food:   { emoji: '🍜', pts: 15, msg: '给你做了好吃的！',        anim: 'arc'    },
   hug:    { emoji: '🤗', pts: 20, msg: '给你一个大大的抱抱！',    anim: 'hearts' },
   kiss:   { emoji: '😘', pts: 25, msg: '亲亲你~💋',              anim: 'hearts' },
   poke:   { emoji: '👆', pts: 3,  msg: '戳了你一下！',            anim: 'poke'   },
-  pet:    { emoji: '🐾', pts: 8,  msg: '在撸小橘~',              anim: 'pet'    },
+  pet:    { emoji: '🐾', pts: 8,  msg: '在撸小老头~',              anim: 'pet'    },
   letter: { emoji: '💌', pts: 10, msg: '给你写了一封信~',         anim: 'arc'    }
 };
 
@@ -2625,29 +2715,38 @@ async function init() {
 }
 
 // ===================================================
-// ===================================================
 // LOG DRAWER
 // ===================================================
-async function openLog() {
+let currentLogTab = 'log';
+
+async function openLog(tab) {
   const overlay = document.getElementById('log-overlay');
+  overlay.classList.remove('hidden');
+  setLogRedDot(false);
+  await switchLogTab(tab || currentLogTab);
+}
+
+async function switchLogTab(tab) {
+  currentLogTab = tab;
+  document.getElementById('tab-log').classList.toggle('active', tab === 'log');
+  document.getElementById('tab-letters').classList.toggle('active', tab === 'letters');
+  document.getElementById('panel-log').classList.toggle('active', tab === 'log');
+  document.getElementById('panel-letters').classList.toggle('active', tab === 'letters');
+
+  if (tab === 'log') await loadLogList();
+  else await loadLetterList();
+}
+
+async function loadLogList() {
   const list = document.getElementById('log-list');
   list.innerHTML = '<div class="log-empty">加载中...</div>';
-  overlay.classList.remove('hidden');
-
-  // Clear red dot when opened
-  setLogRedDot(false);
-
   try {
     const since = Date.now() - 24 * 60 * 60 * 1000;
     const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
-      .orderByChild('timestamp')
-      .startAt(since)
-      .once('value');
+      .orderByChild('timestamp').startAt(since).once('value');
 
     const items = [];
-    snap.forEach(child => {
-      items.push({ id: child.key, ...child.val() });
-    });
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
     items.sort((a, b) => b.timestamp - a.timestamp);
 
     if (items.length === 0) {
@@ -2661,15 +2760,16 @@ async function openLog() {
       const senderName = item.from === 'pig' ? '🐷 小猪' : '🐶 小狗';
       const targetName = item.to   === 'pig' ? '🐷 小猪' : '🐶 小狗';
       const senderClass = item.from === 'pig' ? 'log-sender-pig' : 'log-sender-dog';
-      const letterBody = item.action === 'letter' && item.content
-        ? `<div class="log-letter-body">${escapeHtml(item.content)}</div>`
+      // Letter: show action only, with jump link to mailbox
+      const letterLink = item.action === 'letter'
+        ? `<button class="log-letter-link" onclick="switchLogTab('letters')">查看原信 →</button>`
         : '';
       return `
         <div class="log-item${item.action === 'letter' ? ' letter-item' : ''}">
           <div class="log-emoji">${cfg.emoji}</div>
           <div class="log-info">
             <div class="log-msg">${cfg.msg}</div>
-            ${letterBody}
+            ${letterLink}
             <div class="log-meta">
               <span class="${senderClass}">${senderName}</span>
               <span>→ ${targetName}</span>
@@ -2685,12 +2785,45 @@ async function openLog() {
   }
 }
 
+async function loadLetterList() {
+  const list = document.getElementById('letter-list');
+  list.innerHTML = '<div class="log-empty">加载中...</div>';
+  try {
+    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
+      .orderByChild('action').equalTo('letter').once('value');
+
+    const items = [];
+    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    items.sort((a, b) => b.timestamp - a.timestamp);
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="log-empty">还没有信件 💌</div>';
+      return;
+    }
+
+    list.innerHTML = items.map(item => {
+      const fromName = item.from === 'pig' ? '🐷 小猪' : '🐶 小狗';
+      const toName   = item.to   === 'pig' ? '🐷 小猪' : '🐶 小狗';
+      return `
+        <div class="letter-card">
+          <div class="letter-card-stamp">💌</div>
+          <div class="letter-card-from">${fromName} → ${toName}</div>
+          <div class="letter-card-body">${escapeHtml(item.content || '')}</div>
+          <div class="letter-card-time">${relativeTime(item.timestamp)}</div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="log-empty">加载失败，请重试</div>';
+    console.error(e);
+  }
+}
+
 function closeLog(event) {
   if (event && event.target !== document.getElementById('log-overlay')) return;
   document.getElementById('log-overlay').classList.add('hidden');
 }
 
-// ===================================================
 // ===================================================
 // LETTER (留言)
 // ===================================================
