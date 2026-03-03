@@ -1912,12 +1912,11 @@ async function markActionSeen(roomCode, actionId) {
 }
 
 async function getUnseenActions(roomCode, myRole) {
-  const snap = await dbRef(`rooms/${roomCode}/pendingActions`)
-    .orderByChild('seen').equalTo(false).once('value');
+  const snap = await dbRef(`rooms/${roomCode}/pendingActions`).once('value');
   const actions = [];
   snap.forEach(child => {
     const d = child.val();
-    if (d.to === myRole) {
+    if (d && d.to === myRole && !d.seen) {
       actions.push({ id: child.key, ...d });
     }
   });
@@ -2220,7 +2219,6 @@ function startGameListeners(roomCode) {
 
   // Pending actions (real-time for when partner sends something while online)
   dbRef(`rooms/${roomCode}/pendingActions`)
-    .orderByChild('seen').equalTo(false)
     .on('child_added', async snap => {
       const d = snap.val();
       if (d && d.to === state.myRole && !d.seen) {
@@ -2753,11 +2751,14 @@ async function loadLogList() {
   list.innerHTML = '<div class="log-empty">加载中...</div>';
   try {
     const since = Date.now() - 24 * 60 * 60 * 1000;
-    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
-      .orderByChild('timestamp').startAt(since).once('value');
+    // Fetch all and filter client-side to avoid needing a Firebase index
+    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`).once('value');
 
     const items = [];
-    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    snap.forEach(child => {
+      const d = child.val();
+      if (d && d.timestamp >= since) items.push({ id: child.key, ...d });
+    });
     items.sort((a, b) => b.timestamp - a.timestamp);
 
     if (items.length === 0) {
