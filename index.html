@@ -1017,8 +1017,9 @@
       z-index: 60;
       background: rgba(0,0,0,0.6);
       display: flex;
-      align-items: flex-end;
+      align-items: center;
       justify-content: center;
+      padding: 16px;
     }
 
     .log-overlay.hidden {
@@ -1028,13 +1029,13 @@
     .log-drawer {
       background: #0d0520;
       border: 3px solid #ff6b9d;
-      border-bottom: none;
       width: 100%;
       max-width: 480px;
-      max-height: 70vh;
+      height: 80vh;
+      max-height: 680px;
       display: flex;
       flex-direction: column;
-      animation: slideUp 0.25s ease;
+      animation: popIn 0.2s ease;
     }
 
     @keyframes slideUp {
