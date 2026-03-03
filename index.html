@@ -762,6 +762,132 @@
       color: #888;
     }
 
+    /* ===== LOG BUTTON ===== */
+    .log-btn {
+      font-size: 18px;
+      background: none;
+      border: 2px solid #ff6b9d44;
+      padding: 4px 8px;
+      cursor: pointer;
+      flex-shrink: 0;
+      line-height: 1;
+    }
+
+    .log-btn:active {
+      background: #ff6b9d22;
+    }
+
+    /* ===== LOG DRAWER ===== */
+    .log-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 60;
+      background: rgba(0,0,0,0.6);
+      display: flex;
+      align-items: flex-end;
+      justify-content: center;
+    }
+
+    .log-overlay.hidden {
+      display: none;
+    }
+
+    .log-drawer {
+      background: #0d0520;
+      border: 3px solid #ff6b9d;
+      border-bottom: none;
+      width: 100%;
+      max-width: 480px;
+      max-height: 70vh;
+      display: flex;
+      flex-direction: column;
+      animation: slideUp 0.25s ease;
+    }
+
+    @keyframes slideUp {
+      from { transform: translateY(100%); }
+      to   { transform: translateY(0); }
+    }
+
+    .log-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 12px 16px;
+      border-bottom: 2px solid #ff6b9d44;
+      flex-shrink: 0;
+    }
+
+    .log-title {
+      font-size: 8px;
+      color: #ffd93d;
+    }
+
+    .log-close {
+      font-size: 18px;
+      color: #666;
+      background: none;
+      border: none;
+      cursor: pointer;
+      padding: 0 4px;
+    }
+
+    .log-list {
+      overflow-y: auto;
+      flex: 1;
+      padding: 8px 0;
+      padding-bottom: calc(8px + env(safe-area-inset-bottom));
+    }
+
+    .log-empty {
+      text-align: center;
+      color: #444;
+      font-size: 7px;
+      padding: 32px 16px;
+      font-family: 'PingFang SC', system-ui;
+    }
+
+    .log-item {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 8px 16px;
+      border-bottom: 1px solid #ffffff08;
+    }
+
+    .log-item:last-child {
+      border-bottom: none;
+    }
+
+    .log-emoji {
+      font-size: 22px;
+      flex-shrink: 0;
+      width: 28px;
+      text-align: center;
+    }
+
+    .log-info {
+      flex: 1;
+    }
+
+    .log-msg {
+      font-size: 7px;
+      color: #ffd93d;
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui;
+      line-height: 1.6;
+    }
+
+    .log-meta {
+      font-size: 6px;
+      color: #555;
+      margin-top: 2px;
+      display: flex;
+      gap: 8px;
+    }
+
+    .log-sender-pig { color: #ff9d9d; }
+    .log-sender-dog { color: #9db8ff; }
+
     /* ===== NOTIFICATION CARD ===== */
     .notif-overlay {
       position: fixed;
@@ -1162,14 +1288,14 @@
     <div class="room-tag">🏠 <span id="game-room-code">------</span></div>
     <div class="intimacy-wrap">
       <div class="intimacy-label">
-        <span id="intimacy-level-name">今日好感</span>
+        <span>今日好感 💕</span>
         <span id="intimacy-score">0 / 200</span>
       </div>
       <div class="intimacy-bar-bg">
         <div class="intimacy-bar-fill" id="intimacy-bar" style="width:0%"></div>
       </div>
-      <div style="font-size:5px; color:#555; margin-top:2px;">累计 <span id="intimacy-total">0</span> ❤️</div>
     </div>
+    <button class="log-btn" onclick="openLog()">📖</button>
   </div>
 
   <!-- Game viewport -->
@@ -1270,6 +1396,19 @@
         <span class="btn-label">撸小橘</span>
         <span class="btn-pts">+8</span>
       </div>
+    </div>
+  </div>
+</div>
+
+<!-- Log drawer -->
+<div class="log-overlay hidden" id="log-overlay" onclick="closeLog(event)">
+  <div class="log-drawer">
+    <div class="log-header">
+      <span class="log-title">📖 过去24小时的互动</span>
+      <button class="log-close" onclick="closeLog()">×</button>
+    </div>
+    <div class="log-list" id="log-list">
+      <div class="log-empty">暂无互动记录</div>
     </div>
   </div>
 </div>
@@ -1862,45 +2001,16 @@ async function checkAndResetDaily(roomCode) {
 
 function updateIntimacyUI(daily, total) {
   state.intimacy = daily;
-  state.intimacyTotal = total;
+  state.intimacyTotal = total || 0;
 
   const capped = Math.min(daily, DAILY_MAX);
   const pct = (capped / DAILY_MAX) * 100;
 
   document.getElementById('intimacy-score').textContent = capped + ' / ' + DAILY_MAX;
   document.getElementById('intimacy-bar').style.width = pct + '%';
-  document.getElementById('intimacy-total').textContent = total;
-
-  // Level based on total cumulative score
-  let level = INTIMACY_LEVELS[0];
-  for (const l of INTIMACY_LEVELS) {
-    if (total >= l.min) level = l;
-  }
-  document.getElementById('intimacy-level-name').textContent = level.emoji + ' ' + level.name;
 }
 
-function checkLevelUp(oldTotal, newTotal) {
-  let oldLevel = INTIMACY_LEVELS[0], newLevel = INTIMACY_LEVELS[0];
-  for (const l of INTIMACY_LEVELS) {
-    if (oldTotal >= l.min) oldLevel = l;
-    if (newTotal >= l.min) newLevel = l;
-  }
-  if (newLevel.name !== oldLevel.name) {
-    showLevelUp(newLevel);
-  }
-}
-
-function showLevelUp(level) {
-  const pop = document.createElement('div');
-  pop.className = 'level-up-pop';
-  pop.innerHTML = `
-    <span class="level-up-emoji">${level.emoji}</span>
-    <div class="level-up-text">关系升级！</div>
-    <div style="font-size:8px; color:#ff6b9d; margin-top:8px; font-family:'PingFang SC',system-ui;">${level.name}</div>
-  `;
-  document.body.appendChild(pop);
-  setTimeout(() => pop.remove(), 3000);
-}
+function checkLevelUp() {} // no-op, level system hidden
 
 // ===================================================
 // ACTION SYSTEM
@@ -2323,6 +2433,67 @@ async function init() {
   }
 
   showScene('scene-home');
+}
+
+// ===================================================
+// ===================================================
+// LOG DRAWER
+// ===================================================
+async function openLog() {
+  const overlay = document.getElementById('log-overlay');
+  const list = document.getElementById('log-list');
+  list.innerHTML = '<div class="log-empty">加载中...</div>';
+  overlay.classList.remove('hidden');
+
+  try {
+    const since = Date.now() - 24 * 60 * 60 * 1000;
+    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
+      .orderByChild('timestamp')
+      .startAt(since)
+      .once('value');
+
+    const items = [];
+    snap.forEach(child => {
+      items.push({ id: child.key, ...child.val() });
+    });
+    // Also fetch seen actions from past 24h — pendingActions stores all (seen or not)
+    // Sort newest first
+    items.sort((a, b) => b.timestamp - a.timestamp);
+
+    if (items.length === 0) {
+      list.innerHTML = '<div class="log-empty">过去24小时还没有互动记录 🥺</div>';
+      return;
+    }
+
+    list.innerHTML = items.map(item => {
+      const cfg = ACTION_CONFIG[item.action];
+      if (!cfg) return '';
+      const senderName = item.from === 'pig' ? '🐷 小猪' : '🐶 小狗';
+      const targetName = item.to   === 'pig' ? '🐷 小猪' : '🐶 小狗';
+      const senderClass = item.from === 'pig' ? 'log-sender-pig' : 'log-sender-dog';
+      return `
+        <div class="log-item">
+          <div class="log-emoji">${cfg.emoji}</div>
+          <div class="log-info">
+            <div class="log-msg">${cfg.msg}</div>
+            <div class="log-meta">
+              <span class="${senderClass}">${senderName}</span>
+              <span>→ ${targetName}</span>
+              <span>${relativeTime(item.timestamp)}</span>
+            </div>
+          </div>
+        </div>
+      `;
+    }).join('');
+  } catch (e) {
+    list.innerHTML = '<div class="log-empty">加载失败，请重试</div>';
+    console.error(e);
+  }
+}
+
+function closeLog(event) {
+  if (event && event.target !== document.getElementById('log-overlay')) return;
+  document.getElementById('log-overlay').classList.add('hidden');
 }
 
 // ===================================================
