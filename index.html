@@ -1,0 +1,2200 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <meta name="format-detection" content="telephone=no">
+  <title>小猪小狗的小屋 🐷🏠🐶</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap" rel="stylesheet">
+
+  <!-- Firebase SDK (compat v9) -->
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-app-compat.js"></script>
+  <script src="https://www.gstatic.com/firebasejs/9.22.1/firebase-database-compat.js"></script>
+
+  <style>
+    /* ===== RESET & BASE ===== */
+    *, *::before, *::after {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+    }
+
+    html, body {
+      width: 100%;
+      height: 100%;
+      overflow: hidden;
+      background: #1a0a2e;
+      -webkit-text-size-adjust: 100%;
+      touch-action: manipulation;
+    }
+
+    body {
+      font-family: 'Press Start 2P', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+      color: #fff;
+      position: relative;
+    }
+
+    /* ===== SCENES ===== */
+    .scene {
+      position: fixed;
+      inset: 0;
+      display: none;
+      flex-direction: column;
+      align-items: center;
+      overflow-y: auto;
+      overflow-x: hidden;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom));
+    }
+
+    .scene.active {
+      display: flex;
+    }
+
+    /* ===== PIXEL BUTTON ===== */
+    .px-btn {
+      font-family: 'Press Start 2P', system-ui, sans-serif;
+      font-size: 10px;
+      color: #1a0a2e;
+      background: #ffd93d;
+      border: 3px solid #1a0a2e;
+      box-shadow: 4px 4px 0 #1a0a2e;
+      padding: 12px 20px;
+      cursor: pointer;
+      transition: transform 0.05s, box-shadow 0.05s;
+      user-select: none;
+      -webkit-user-select: none;
+      display: inline-block;
+      text-align: center;
+    }
+
+    .px-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 #1a0a2e;
+    }
+
+    .px-btn.pink {
+      background: #ff6b9d;
+      color: #fff;
+    }
+
+    .px-btn.green {
+      background: #6bcb77;
+      color: #1a0a2e;
+    }
+
+    .px-btn.gray {
+      background: #888;
+      color: #ccc;
+      cursor: not-allowed;
+      opacity: 0.6;
+    }
+
+    .px-btn.gray:active {
+      transform: none;
+      box-shadow: 4px 4px 0 #1a0a2e;
+    }
+
+    /* ===== PIXEL INPUT ===== */
+    .px-input {
+      font-family: 'Press Start 2P', system-ui, sans-serif;
+      font-size: 14px;
+      color: #ffd93d;
+      background: #0d0520;
+      border: 3px solid #ff6b9d;
+      box-shadow: inset 2px 2px 0 #000;
+      padding: 12px 16px;
+      text-align: center;
+      letter-spacing: 4px;
+      text-transform: uppercase;
+      outline: none;
+      width: 100%;
+    }
+
+    .px-input::placeholder {
+      color: #555;
+      letter-spacing: 2px;
+    }
+
+    /* ===== PANEL ===== */
+    .px-panel {
+      background: #0d0520;
+      border: 3px solid #ff6b9d;
+      box-shadow: 6px 6px 0 #ff6b9d44;
+      padding: 20px;
+      width: calc(100% - 32px);
+      max-width: 420px;
+    }
+
+    /* ===== STARRY BACKGROUND ===== */
+    .starry-bg {
+      position: fixed;
+      inset: 0;
+      background:
+        radial-gradient(1px 1px at 10% 20%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 25% 55%, #ffd93d 100%, transparent),
+        radial-gradient(1.5px 1.5px at 40% 10%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 55% 70%, #fff 100%, transparent),
+        radial-gradient(2px 2px at 70% 35%, #ff6b9d 100%, transparent),
+        radial-gradient(1px 1px at 80% 80%, #fff 100%, transparent),
+        radial-gradient(1.5px 1.5px at 90% 15%, #ffd93d 100%, transparent),
+        radial-gradient(1px 1px at 15% 85%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 35% 40%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 60% 90%, #ff6b9d 100%, transparent),
+        radial-gradient(1.5px 1.5px at 75% 60%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 50% 30%, #ffd93d 100%, transparent),
+        radial-gradient(1px 1px at 85% 50%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 5% 50%, #fff 100%, transparent),
+        radial-gradient(1px 1px at 95% 90%, #fff 100%, transparent),
+        #1a0a2e;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes twinkle {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.2; }
+    }
+
+    .star {
+      position: absolute;
+      border-radius: 50%;
+      animation: twinkle var(--dur, 2s) var(--delay, 0s) infinite;
+    }
+
+    /* ===== SCENE: HOME ===== */
+    #scene-home {
+      background: #1a0a2e;
+      z-index: 1;
+    }
+
+    .home-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 40px 16px 24px;
+      gap: 24px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .game-title {
+      text-align: center;
+      line-height: 1.8;
+    }
+
+    .game-title .title-emoji {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 16px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .game-title h1 {
+      font-size: 13px;
+      color: #ffd93d;
+      text-shadow: 2px 2px 0 #ff6b9d, 4px 4px 0 #1a0a2e;
+      line-height: 2;
+    }
+
+    .game-subtitle {
+      font-size: 7px;
+      color: #ff6b9d;
+      margin-top: 8px;
+      letter-spacing: 2px;
+    }
+
+    /* Room code display */
+    .room-code-display {
+      text-align: center;
+      padding: 16px;
+    }
+
+    .room-code-display .code-label {
+      font-size: 7px;
+      color: #ff6b9d;
+      margin-bottom: 12px;
+      display: block;
+    }
+
+    .room-code-display .code-value {
+      font-size: 28px;
+      color: #ffd93d;
+      letter-spacing: 8px;
+      text-shadow: 0 0 10px #ffd93d88;
+      display: block;
+      margin-bottom: 16px;
+    }
+
+    .copy-hint {
+      font-size: 6px;
+      color: #888;
+    }
+
+    /* ===== SCENE: SELECT ===== */
+    #scene-select {
+      background: #1a0a2e;
+      z-index: 1;
+      gap: 0;
+    }
+
+    .select-content {
+      position: relative;
+      z-index: 2;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding: 32px 16px 24px;
+      gap: 20px;
+      width: 100%;
+      max-width: 420px;
+    }
+
+    .select-title {
+      font-size: 11px;
+      color: #ffd93d;
+      text-align: center;
+      margin-bottom: 4px;
+    }
+
+    .character-cards {
+      display: flex;
+      gap: 16px;
+      width: 100%;
+    }
+
+    .char-card {
+      flex: 1;
+      background: #0d0520;
+      border: 3px solid #444;
+      padding: 20px 12px;
+      text-align: center;
+      cursor: pointer;
+      transition: border-color 0.1s, transform 0.05s, box-shadow 0.05s;
+      box-shadow: 4px 4px 0 #444;
+      position: relative;
+    }
+
+    .char-card:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 #444;
+    }
+
+    .char-card.selected {
+      border-color: #ff6b9d;
+      box-shadow: 4px 4px 0 #ff6b9d;
+    }
+
+    .char-card.taken {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+
+    .char-card.taken:active {
+      transform: none;
+      box-shadow: 4px 4px 0 #444;
+    }
+
+    .char-emoji {
+      font-size: 56px;
+      display: block;
+      margin-bottom: 12px;
+      animation: float 3s ease-in-out infinite;
+    }
+
+    .char-card:nth-child(2) .char-emoji {
+      animation-delay: -1.5s;
+    }
+
+    .char-name {
+      font-size: 10px;
+      color: #ffd93d;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    .char-desc {
+      font-size: 6px;
+      color: #aaa;
+      line-height: 1.8;
+    }
+
+    .char-taken-badge {
+      position: absolute;
+      top: 8px;
+      right: 8px;
+      background: #ff6b9d;
+      color: #fff;
+      font-size: 6px;
+      padding: 3px 6px;
+      border: 2px solid #fff;
+    }
+
+    .waiting-text {
+      font-size: 8px;
+      color: #ff6b9d;
+      text-align: center;
+      animation: blink 1.2s step-end infinite;
+    }
+
+    @keyframes blink {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0; }
+    }
+
+    /* ===== SCENE: GAME ===== */
+    #scene-game {
+      background: #1a0a2e;
+      z-index: 1;
+      overflow: hidden;
+    }
+
+    /* Status bar */
+    .status-bar {
+      width: 100%;
+      background: #0d0520;
+      border-bottom: 3px solid #ff6b9d;
+      padding: 8px 12px;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      flex-shrink: 0;
+      padding-top: calc(8px + env(safe-area-inset-top));
+    }
+
+    .room-tag {
+      font-size: 6px;
+      color: #888;
+      white-space: nowrap;
+    }
+
+    .room-tag span {
+      color: #ffd93d;
+    }
+
+    .intimacy-wrap {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+
+    .intimacy-label {
+      font-size: 6px;
+      color: #ff6b9d;
+      display: flex;
+      justify-content: space-between;
+    }
+
+    .intimacy-bar-bg {
+      height: 8px;
+      background: #222;
+      border: 2px solid #ff6b9d;
+      position: relative;
+      overflow: hidden;
+    }
+
+    .intimacy-bar-fill {
+      height: 100%;
+      background: linear-gradient(90deg, #ff6b9d, #ffd93d);
+      transition: width 0.8s ease;
+      position: relative;
+    }
+
+    .intimacy-bar-fill::after {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: repeating-linear-gradient(
+        90deg,
+        transparent,
+        transparent 6px,
+        rgba(0,0,0,0.15) 6px,
+        rgba(0,0,0,0.15) 8px
+      );
+    }
+
+    /* Game viewport */
+    .game-viewport {
+      flex: 1;
+      width: 100%;
+      position: relative;
+      overflow: hidden;
+      min-height: 200px;
+    }
+
+    /* Cabin background */
+    .cabin-bg {
+      position: absolute;
+      inset: 0;
+      /* Wood wall */
+      background:
+        repeating-linear-gradient(
+          180deg,
+          #3d1f0a 0px,
+          #3d1f0a 30px,
+          #2d1506 30px,
+          #2d1506 32px
+        );
+    }
+
+    .cabin-floor {
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 40%;
+      background:
+        repeating-linear-gradient(
+          90deg,
+          #5c3317 0px,
+          #5c3317 40px,
+          #4a2810 40px,
+          #4a2810 42px
+        );
+      border-top: 4px solid #2d1506;
+    }
+
+    .cabin-window {
+      position: absolute;
+      top: 16px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 80px;
+      height: 60px;
+      background: linear-gradient(135deg, #1a3a6e, #2a5aae, #1a3a6e);
+      border: 4px solid #8b5e3c;
+      box-shadow: inset 0 0 10px rgba(100,160,255,0.3);
+    }
+
+    .cabin-window::before {
+      content: '';
+      position: absolute;
+      top: 50%;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: #8b5e3c;
+    }
+
+    .cabin-window::after {
+      content: '';
+      position: absolute;
+      left: 50%;
+      top: 0;
+      bottom: 0;
+      width: 3px;
+      background: #8b5e3c;
+    }
+
+    /* Characters layer */
+    .characters-layer {
+      position: absolute;
+      bottom: 38%;
+      left: 0;
+      right: 0;
+      display: flex;
+      justify-content: space-around;
+      align-items: flex-end;
+      padding: 0 20px;
+      pointer-events: none;
+    }
+
+    .character {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      position: relative;
+    }
+
+    .character-emoji {
+      font-size: 48px;
+      animation: float 3s ease-in-out infinite;
+      display: block;
+      filter: drop-shadow(0 4px 8px rgba(0,0,0,0.5));
+    }
+
+    .char-label {
+      font-size: 6px;
+      background: #0d0520cc;
+      color: #ffd93d;
+      padding: 2px 6px;
+      border: 1px solid #ffd93d;
+    }
+
+    .char-online-dot {
+      width: 6px;
+      height: 6px;
+      background: #6bcb77;
+      border-radius: 50%;
+      position: absolute;
+      top: 0;
+      right: -4px;
+      box-shadow: 0 0 4px #6bcb77;
+    }
+
+    .char-offline-dot {
+      background: #888;
+      box-shadow: none;
+    }
+
+    /* Cat NPC */
+    .cat-npc {
+      position: absolute;
+      bottom: calc(38% + 4px);
+      right: 20px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+      cursor: pointer;
+      z-index: 5;
+    }
+
+    .cat-emoji {
+      font-size: 32px;
+      animation: float 2s ease-in-out infinite;
+      animation-delay: -0.7s;
+      display: block;
+    }
+
+    .cat-label {
+      font-size: 5px;
+      background: #0d0520cc;
+      color: #aaa;
+      padding: 2px 4px;
+      border: 1px solid #555;
+    }
+
+    .cat-hunger-bar {
+      width: 40px;
+      height: 4px;
+      background: #222;
+      border: 1px solid #555;
+      overflow: hidden;
+    }
+
+    .cat-hunger-fill {
+      height: 100%;
+      background: #ff9d3d;
+      transition: width 0.5s;
+    }
+
+    /* Feed cat button */
+    .feed-cat-btn {
+      position: absolute;
+      bottom: calc(38% + 90px);
+      right: 12px;
+      background: #ff9d3d;
+      color: #1a0a2e;
+      font-family: 'Press Start 2P', system-ui, sans-serif;
+      font-size: 6px;
+      padding: 6px 8px;
+      border: 2px solid #1a0a2e;
+      box-shadow: 3px 3px 0 #1a0a2e;
+      cursor: pointer;
+      z-index: 6;
+      animation: bounce 1s ease-in-out infinite;
+    }
+
+    .feed-cat-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0 #1a0a2e;
+    }
+
+    .feed-cat-btn.hidden {
+      display: none;
+    }
+
+    @keyframes bounce {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-4px); }
+    }
+
+    /* Animation overlay */
+    .anim-layer {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      overflow: hidden;
+      z-index: 10;
+    }
+
+    /* Action panel */
+    .action-panel {
+      width: 100%;
+      background: #0d0520;
+      border-top: 3px solid #ff6b9d;
+      padding: 12px;
+      padding-bottom: calc(12px + env(safe-area-inset-bottom));
+      flex-shrink: 0;
+    }
+
+    .action-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 8px;
+      max-width: 420px;
+      margin: 0 auto;
+    }
+
+    .action-btn {
+      background: #1a0a2e;
+      border: 2px solid #ff6b9d;
+      box-shadow: 3px 3px 0 #ff6b9d44;
+      padding: 8px 4px;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.05s, box-shadow 0.05s;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .action-btn:active {
+      transform: translate(3px, 3px);
+      box-shadow: 0 0 0;
+    }
+
+    .action-btn .btn-emoji {
+      font-size: 24px;
+      line-height: 1;
+    }
+
+    .action-btn .btn-label {
+      font-size: 6px;
+      color: #ffd93d;
+      font-family: 'Press Start 2P', 'PingFang SC', system-ui, sans-serif;
+    }
+
+    .action-btn .btn-pts {
+      font-size: 5px;
+      color: #ff6b9d;
+    }
+
+    /* ===== NOTIFICATION CARD ===== */
+    .notif-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 100;
+      pointer-events: none;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      padding-top: 80px;
+      gap: 12px;
+    }
+
+    .notif-card {
+      background: #0d0520;
+      border: 3px solid #ffd93d;
+      box-shadow: 6px 6px 0 #ffd93d55;
+      padding: 16px 20px;
+      max-width: 300px;
+      width: calc(100% - 32px);
+      pointer-events: auto;
+      animation: slideIn 0.3s ease;
+      position: relative;
+    }
+
+    @keyframes slideIn {
+      from { transform: translateY(-20px); opacity: 0; }
+      to { transform: translateY(0); opacity: 1; }
+    }
+
+    @keyframes slideOut {
+      from { transform: translateY(0); opacity: 1; }
+      to { transform: translateY(-20px); opacity: 0; }
+    }
+
+    .notif-card.leaving {
+      animation: slideOut 0.3s ease forwards;
+    }
+
+    .notif-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 8px;
+    }
+
+    .notif-sender {
+      font-size: 7px;
+      color: #ff6b9d;
+    }
+
+    .notif-time {
+      font-size: 6px;
+      color: #666;
+    }
+
+    .notif-body {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .notif-emoji {
+      font-size: 32px;
+    }
+
+    .notif-msg {
+      font-size: 7px;
+      color: #ffd93d;
+      line-height: 1.8;
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+    }
+
+    .notif-close {
+      position: absolute;
+      top: 6px;
+      right: 8px;
+      font-size: 10px;
+      color: #555;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: #888;
+    }
+
+    /* ===== LOADING SCREEN ===== */
+    #scene-loading {
+      background: #1a0a2e;
+      z-index: 99;
+      justify-content: center;
+      align-items: center;
+    }
+
+    .loading-content {
+      text-align: center;
+    }
+
+    .loading-emoji {
+      font-size: 64px;
+      display: block;
+      animation: float 1.5s ease-in-out infinite;
+      margin-bottom: 20px;
+    }
+
+    .loading-text {
+      font-size: 8px;
+      color: #ff6b9d;
+      animation: blink 1s step-end infinite;
+    }
+
+    /* ===== FLOAT ANIMATION ===== */
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-8px); }
+    }
+
+    /* ===== SHAKE ANIMATION ===== */
+    @keyframes shake {
+      0%, 100% { transform: translateX(0); }
+      15% { transform: translateX(-8px); }
+      30% { transform: translateX(8px); }
+      45% { transform: translateX(-6px); }
+      60% { transform: translateX(6px); }
+      75% { transform: translateX(-3px); }
+      90% { transform: translateX(3px); }
+    }
+
+    .shaking .character-emoji {
+      animation: shake 0.6s ease !important;
+    }
+
+    /* ===== PARTICLE ANIMATIONS ===== */
+    .particle {
+      position: absolute;
+      pointer-events: none;
+      z-index: 11;
+      font-size: 20px;
+      animation: particleFly var(--dur, 1.5s) ease-out forwards;
+    }
+
+    @keyframes particleFly {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      100% { transform: translate(var(--tx, 0px), var(--ty, -100px)) scale(0.3); opacity: 0; }
+    }
+
+    .particle-arc {
+      animation: arcFly var(--dur, 1.2s) cubic-bezier(0.25, 0.46, 0.45, 0.94) forwards;
+    }
+
+    @keyframes arcFly {
+      0% { transform: translate(0, 0) scale(1); opacity: 1; }
+      50% { transform: translate(calc(var(--tx) * 0.5), calc(var(--ty) * 0.3 - 40px)) scale(0.8); }
+      100% { transform: translate(var(--tx, 100px), var(--ty, 0px)) scale(0.5); opacity: 0; }
+    }
+
+    .heart-burst {
+      animation: heartBurst var(--dur, 1s) ease-out forwards;
+    }
+
+    @keyframes heartBurst {
+      0% { transform: translate(0, 0) scale(0); opacity: 1; }
+      50% { transform: translate(var(--tx, 0px), var(--ty, -60px)) scale(1.5); }
+      100% { transform: translate(var(--tx, 0px), var(--ty, -100px)) scale(0.5); opacity: 0; }
+    }
+
+    .paw-float {
+      animation: pawFloat 1.5s ease-out forwards;
+    }
+
+    @keyframes pawFloat {
+      0% { transform: translateY(0) scale(1); opacity: 1; }
+      50% { transform: translateY(-30px) scale(1.3); opacity: 0.8; }
+      100% { transform: translateY(-70px) scale(0.8); opacity: 0; }
+    }
+
+    /* ===== PURR TEXT ===== */
+    .purr-text {
+      position: absolute;
+      font-size: 10px;
+      color: #ff9d3d;
+      font-family: 'Press Start 2P', system-ui;
+      animation: purrFloat 2s ease-out forwards;
+      pointer-events: none;
+      z-index: 11;
+    }
+
+    @keyframes purrFloat {
+      0% { transform: translate(-50%, 0); opacity: 1; }
+      100% { transform: translate(-50%, -60px); opacity: 0; }
+    }
+
+    /* ===== INTIMACY LEVEL POP ===== */
+    .level-up-pop {
+      position: fixed;
+      top: 50%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      background: #0d0520;
+      border: 4px solid #ffd93d;
+      box-shadow: 8px 8px 0 #ffd93d55;
+      padding: 24px 32px;
+      text-align: center;
+      z-index: 200;
+      animation: popIn 0.4s ease;
+    }
+
+    @keyframes popIn {
+      0% { transform: translate(-50%, -50%) scale(0); }
+      70% { transform: translate(-50%, -50%) scale(1.1); }
+      100% { transform: translate(-50%, -50%) scale(1); }
+    }
+
+    .level-up-emoji {
+      font-size: 48px;
+      display: block;
+      margin-bottom: 12px;
+    }
+
+    .level-up-text {
+      font-size: 9px;
+      color: #ffd93d;
+    }
+
+    /* ===== DIVIDER ===== */
+    .px-divider {
+      width: 100%;
+      height: 2px;
+      background: repeating-linear-gradient(
+        90deg,
+        #ff6b9d 0px,
+        #ff6b9d 8px,
+        transparent 8px,
+        transparent 12px
+      );
+      margin: 4px 0;
+    }
+
+    /* ===== SCROLLBAR ===== */
+    ::-webkit-scrollbar { width: 4px; }
+    ::-webkit-scrollbar-track { background: #0d0520; }
+    ::-webkit-scrollbar-thumb { background: #ff6b9d; }
+
+    /* ===== UTILITY ===== */
+    .hidden { display: none !important; }
+    .text-center { text-align: center; }
+    .mt-8 { margin-top: 8px; }
+    .mt-16 { margin-top: 16px; }
+    .gap-8 { gap: 8px; }
+    .w-full { width: 100%; }
+    .flex { display: flex; }
+    .flex-col { flex-direction: column; }
+    .items-center { align-items: center; }
+
+    /* Online status badge */
+    .online-status {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-size: 6px;
+    }
+
+    .status-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: #6bcb77;
+      box-shadow: 0 0 4px #6bcb77;
+    }
+
+    .status-dot.offline {
+      background: #888;
+      box-shadow: none;
+    }
+
+    /* Error/success messages */
+    .msg-box {
+      font-size: 7px;
+      padding: 8px 12px;
+      border: 2px solid;
+      text-align: center;
+      width: 100%;
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui;
+    }
+
+    .msg-box.error {
+      color: #ff4444;
+      border-color: #ff4444;
+      background: #ff000011;
+    }
+
+    .msg-box.success {
+      color: #6bcb77;
+      border-color: #6bcb77;
+      background: #00ff0011;
+    }
+
+    /* Cat happy animation */
+    @keyframes catHappy {
+      0%, 100% { transform: scale(1); }
+      25% { transform: scale(1.3) rotate(-10deg); }
+      75% { transform: scale(1.3) rotate(10deg); }
+    }
+
+    .cat-happy .cat-emoji {
+      animation: catHappy 0.5s ease !important;
+    }
+  </style>
+</head>
+<body>
+
+<!-- Notification overlay (always present) -->
+<div class="notif-overlay" id="notif-overlay"></div>
+
+<!-- ===== SCENE: LOADING ===== -->
+<div class="scene active" id="scene-loading">
+  <div class="loading-content">
+    <span class="loading-emoji">🏠</span>
+    <div class="loading-text">加载中...</div>
+  </div>
+</div>
+
+<!-- ===== SCENE: HOME ===== -->
+<div class="scene" id="scene-home">
+  <div class="starry-bg" id="starry-bg"></div>
+  <div class="home-content">
+    <div class="game-title">
+      <span class="title-emoji">🐷🏠🐶</span>
+      <h1>小猪小狗<br>的小屋</h1>
+      <div class="game-subtitle">像素情侣小屋</div>
+    </div>
+
+    <div class="px-panel" id="home-panel-main">
+      <div style="display:flex; flex-direction:column; gap:12px;">
+        <button class="px-btn pink w-full" onclick="showCreatePanel()">✨ 创建房间</button>
+        <button class="px-btn w-full" onclick="showJoinPanel()">🔑 加入房间</button>
+      </div>
+    </div>
+
+    <!-- Create room panel -->
+    <div class="px-panel hidden" id="home-panel-create">
+      <div style="display:flex; flex-direction:column; gap:16px; align-items:center;">
+        <div style="font-size:8px; color:#ff6b9d; text-align:center;">房间已创建！</div>
+        <div class="room-code-display">
+          <span class="code-label">把房间码发给 TA 吧</span>
+          <span class="code-value" id="display-room-code">------</span>
+          <button class="px-btn" style="font-size:7px; padding:8px 16px;" onclick="copyRoomCode()">📋 复制房间码</button>
+          <div class="copy-hint mt-8" id="copy-hint"></div>
+        </div>
+        <div class="waiting-text">等待对方加入...</div>
+        <button class="px-btn gray w-full" style="font-size:7px;" onclick="backToMain()">← 返回</button>
+      </div>
+    </div>
+
+    <!-- Join room panel -->
+    <div class="px-panel hidden" id="home-panel-join">
+      <div style="display:flex; flex-direction:column; gap:16px;">
+        <div style="font-size:8px; color:#ff6b9d; text-align:center;">输入房间码</div>
+        <input type="text" class="px-input" id="join-code-input" maxlength="6" placeholder="XXXXXX"
+               oninput="this.value=this.value.toUpperCase().replace(/[^A-Z]/g,'')"
+               onkeydown="if(event.key==='Enter')joinRoom()">
+        <div id="join-error" class="msg-box error hidden"></div>
+        <button class="px-btn pink w-full" onclick="joinRoom()">进入小屋 →</button>
+        <button class="px-btn gray w-full" style="font-size:7px;" onclick="backToMain()">← 返回</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ===== SCENE: SELECT ===== -->
+<div class="scene" id="scene-select">
+  <div class="starry-bg"></div>
+  <div class="select-content">
+    <div class="select-title">选择你的角色</div>
+    <div style="font-size:7px; color:#888; text-align:center;">房间码: <span id="select-room-code" style="color:#ffd93d;">------</span></div>
+
+    <div class="character-cards" id="character-cards">
+      <div class="char-card" id="card-pig" onclick="selectCharacter('pig')">
+        <span class="char-emoji">🐷</span>
+        <span class="char-name">小猪</span>
+        <span class="char-desc">软软的<br>最爱吃饭</span>
+      </div>
+      <div class="char-card" id="card-dog" onclick="selectCharacter('dog')">
+        <span class="char-emoji">🐶</span>
+        <span class="char-name">小狗</span>
+        <span class="char-desc">忠诚的<br>最爱陪伴</span>
+      </div>
+    </div>
+
+    <div id="select-waiting" class="waiting-text hidden">等待对方选择角色...</div>
+    <div id="select-msg" style="font-size:7px; color:#6bcb77; text-align:center; min-height:20px;"></div>
+  </div>
+</div>
+
+<!-- ===== SCENE: GAME ===== -->
+<div class="scene" id="scene-game">
+  <!-- Status bar -->
+  <div class="status-bar">
+    <div class="room-tag">🏠 <span id="game-room-code">------</span></div>
+    <div class="intimacy-wrap">
+      <div class="intimacy-label">
+        <span id="intimacy-level-name">初识</span>
+        <span id="intimacy-score">0</span>
+      </div>
+      <div class="intimacy-bar-bg">
+        <div class="intimacy-bar-fill" id="intimacy-bar" style="width:0%"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Game viewport -->
+  <div class="game-viewport" id="game-viewport">
+    <!-- Cabin background -->
+    <div class="cabin-bg">
+      <div class="cabin-window"></div>
+      <div class="cabin-floor"></div>
+    </div>
+
+    <!-- Characters layer -->
+    <div class="characters-layer">
+      <div class="character" id="char-pig">
+        <div class="char-online-dot" id="pig-online-dot"></div>
+        <span class="character-emoji">🐷</span>
+        <span class="char-label" id="pig-label">小猪</span>
+      </div>
+      <div class="character" id="char-dog">
+        <div class="char-online-dot" id="dog-online-dot"></div>
+        <span class="character-emoji">🐶</span>
+        <span class="char-label" id="dog-label">小狗</span>
+      </div>
+    </div>
+
+    <!-- Cat NPC -->
+    <div class="cat-npc" id="cat-npc" onclick="petCat()">
+      <span class="cat-emoji" id="cat-emoji">🐱</span>
+      <span class="cat-label">小橘</span>
+      <div class="cat-hunger-bar">
+        <div class="cat-hunger-fill" id="cat-hunger-fill" style="width:80%"></div>
+      </div>
+    </div>
+
+    <!-- Feed cat button -->
+    <button class="feed-cat-btn hidden" id="feed-cat-btn" onclick="feedCat()">
+      🐟 喂小橘
+    </button>
+
+    <!-- Animation layer -->
+    <div class="anim-layer" id="anim-layer"></div>
+  </div>
+
+  <!-- Action panel -->
+  <div class="action-panel">
+    <div class="action-grid">
+      <div class="action-btn" onclick="doAction('fart')">
+        <span class="btn-emoji">💨</span>
+        <span class="btn-label">放屁</span>
+        <span class="btn-pts">+5</span>
+      </div>
+      <div class="action-btn" onclick="doAction('water')">
+        <span class="btn-emoji">🥤</span>
+        <span class="btn-label">喂水</span>
+        <span class="btn-pts">+10</span>
+      </div>
+      <div class="action-btn" onclick="doAction('food')">
+        <span class="btn-emoji">🍜</span>
+        <span class="btn-label">喂饭</span>
+        <span class="btn-pts">+15</span>
+      </div>
+      <div class="action-btn" onclick="doAction('hug')">
+        <span class="btn-emoji">🤗</span>
+        <span class="btn-label">抱抱</span>
+        <span class="btn-pts">+20</span>
+      </div>
+      <div class="action-btn" onclick="doAction('kiss')">
+        <span class="btn-emoji">😘</span>
+        <span class="btn-label">亲亲</span>
+        <span class="btn-pts">+25</span>
+      </div>
+      <div class="action-btn" onclick="doAction('poke')">
+        <span class="btn-emoji">👆</span>
+        <span class="btn-label">戳一下</span>
+        <span class="btn-pts">+3</span>
+      </div>
+      <div class="action-btn" onclick="doAction('pet')">
+        <span class="btn-emoji">🐾</span>
+        <span class="btn-label">撸小橘</span>
+        <span class="btn-pts">+8</span>
+      </div>
+      <div class="action-btn" id="online-indicator" style="cursor:default; border-color:#444; pointer-events:none;">
+        <span class="btn-emoji" id="partner-status-emoji">💤</span>
+        <span class="btn-label" id="partner-status-text" style="color:#888;">离线中</span>
+        <span class="btn-pts" id="my-role-label" style="color:#666;">-</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+// ===================================================
+// FIREBASE CONFIGURATION
+// ===================================================
+// IMPORTANT: Replace with your Firebase project config!
+const FIREBASE_CONFIG = {
+  apiKey: "AIzaSyAhxLci826N9R2BgOYJWUqVa91iIaIM0U0",
+  authDomain: "pigdog-s-home.firebaseapp.com",
+  databaseURL: "https://pigdog-s-home-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId: "pigdog-s-home",
+  storageBucket: "pigdog-s-home.firebasestorage.app",
+  messagingSenderId: "752544824524",
+  appId: "1:752544824524:web:88dd23cbf7f03ae79e5669",
+  measurementId: "G-N2JW7FYT6G"
+};
+
+// ===================================================
+// APP STATE
+// ===================================================
+let app, db;
+let state = {
+  uid: null,
+  roomCode: null,
+  myRole: null,       // 'pig' | 'dog'
+  partnerRole: null,  // 'pig' | 'dog'
+  intimacy: 0,
+  catData: { mood: 'happy', hunger: 80, lastFed: Date.now(), petCount: 0 },
+  isProcessingNotifs: false,
+  listeners: {},
+  actionCooldown: false,
+  initialized: false
+};
+
+const ACTION_CONFIG = {
+  fart:  { emoji: '💨', pts: 5,  msg: '放了个臭屁朝你~',        anim: 'fart'  },
+  water: { emoji: '🥤', pts: 10, msg: '给你喂水喝~',            anim: 'arc'   },
+  food:  { emoji: '🍜', pts: 15, msg: '给你做了好吃的！',        anim: 'arc'   },
+  hug:   { emoji: '🤗', pts: 20, msg: '给你一个大大的抱抱！',    anim: 'hearts'},
+  kiss:  { emoji: '😘', pts: 25, msg: '亲亲你~💋',              anim: 'hearts'},
+  poke:  { emoji: '👆', pts: 3,  msg: '戳了你一下！',            anim: 'poke'  },
+  pet:   { emoji: '🐾', pts: 8,  msg: '在撸小橘~',              anim: 'pet'   }
+};
+
+const INTIMACY_LEVELS = [
+  { min: 0,   max: 100,  name: '初识',  emoji: '👀' },
+  { min: 100, max: 300,  name: '朋友',  emoji: '😊' },
+  { min: 300, max: 600,  name: '暧昧',  emoji: '💕' },
+  { min: 600, max: 1000, name: '恋人',  emoji: '💑' },
+  { min: 1000,max: 9999, name: '挚爱',  emoji: '💞' }
+];
+
+// ===================================================
+// UTILITIES
+// ===================================================
+function genUID() {
+  return 'u' + Math.random().toString(36).substr(2, 9);
+}
+
+function genRoomCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  return code;
+}
+
+function relativeTime(ts) {
+  const diff = Date.now() - ts;
+  const m = Math.floor(diff / 60000);
+  if (m < 1) return '刚刚';
+  if (m < 60) return m + '分钟前';
+  const h = Math.floor(m / 60);
+  if (h < 24) return h + '小时前';
+  return Math.floor(h / 24) + '天前';
+}
+
+function saveSession() {
+  localStorage.setItem('pigdog_uid', state.uid);
+  localStorage.setItem('pigdog_room', state.roomCode || '');
+  localStorage.setItem('pigdog_role', state.myRole || '');
+}
+
+function loadSession() {
+  return {
+    uid: localStorage.getItem('pigdog_uid'),
+    room: localStorage.getItem('pigdog_room'),
+    role: localStorage.getItem('pigdog_role')
+  };
+}
+
+function clearSession() {
+  localStorage.removeItem('pigdog_room');
+  localStorage.removeItem('pigdog_role');
+}
+
+// ===================================================
+// SCENE MANAGEMENT
+// ===================================================
+function showScene(id) {
+  document.querySelectorAll('.scene').forEach(s => s.classList.remove('active'));
+  const el = document.getElementById(id);
+  if (el) el.classList.add('active');
+}
+
+// ===================================================
+// STARS GENERATION
+// ===================================================
+function generateStars() {
+  const bg = document.getElementById('starry-bg');
+  if (!bg) return;
+  bg.innerHTML = '';
+  const count = 60;
+  for (let i = 0; i < count; i++) {
+    const star = document.createElement('div');
+    star.className = 'star';
+    const size = Math.random() < 0.7 ? 1 : Math.random() < 0.5 ? 2 : 3;
+    star.style.cssText = `
+      width: ${size}px;
+      height: ${size}px;
+      left: ${Math.random() * 100}%;
+      top: ${Math.random() * 100}%;
+      background: ${['#fff','#ffd93d','#ff6b9d','#aad4ff'][Math.floor(Math.random()*4)]};
+      --dur: ${1.5 + Math.random() * 3}s;
+      --delay: ${-Math.random() * 3}s;
+    `;
+    bg.appendChild(star);
+  }
+}
+
+// ===================================================
+// FIREBASE MANAGER
+// ===================================================
+function initFirebase() {
+  try {
+    app = firebase.initializeApp(FIREBASE_CONFIG);
+    db = firebase.database();
+    return true;
+  } catch (e) {
+    console.error('Firebase init failed:', e);
+    return false;
+  }
+}
+
+function dbRef(path) {
+  return db.ref(path);
+}
+
+async function createRoom(roomCode) {
+  const roomRef = dbRef(`rooms/${roomCode}`);
+  await roomRef.set({
+    created: Date.now(),
+    status: 'waiting',
+    intimacy: 0,
+    players: {
+      pig: { uid: '', online: false, lastSeen: 0 },
+      dog: { uid: '', online: false, lastSeen: 0 }
+    },
+    cat: {
+      mood: 'happy',
+      hunger: 80,
+      lastFed: Date.now(),
+      petCount: 0
+    }
+  });
+}
+
+async function roomExists(roomCode) {
+  const snap = await dbRef(`rooms/${roomCode}`).once('value');
+  return snap.exists();
+}
+
+async function getRoomData(roomCode) {
+  const snap = await dbRef(`rooms/${roomCode}`).once('value');
+  return snap.val();
+}
+
+async function getAvailableRole(roomCode) {
+  const data = await getRoomData(roomCode);
+  if (!data || !data.players) return null;
+  if (!data.players.pig || !data.players.pig.uid) return 'pig';
+  if (!data.players.dog || !data.players.dog.uid) return 'dog';
+  return null;
+}
+
+async function setPlayerRole(roomCode, role, uid) {
+  await dbRef(`rooms/${roomCode}/players/${role}`).update({
+    uid,
+    online: true,
+    lastSeen: Date.now()
+  });
+  // Set online presence
+  const presenceRef = dbRef(`rooms/${roomCode}/players/${role}/online`);
+  presenceRef.onDisconnect().set(false);
+  const lastSeenRef = dbRef(`rooms/${roomCode}/players/${role}/lastSeen`);
+  lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+}
+
+async function sendAction(roomCode, from, to, action) {
+  const ref = dbRef(`rooms/${roomCode}/pendingActions`).push();
+  await ref.set({
+    from,
+    to,
+    action,
+    timestamp: Date.now(),
+    seen: false
+  });
+  // Update intimacy
+  const pts = ACTION_CONFIG[action].pts;
+  await dbRef(`rooms/${roomCode}/intimacy`).transaction(cur => (cur || 0) + pts);
+}
+
+async function markActionSeen(roomCode, actionId) {
+  await dbRef(`rooms/${roomCode}/pendingActions/${actionId}/seen`).set(true);
+}
+
+async function getUnseenActions(roomCode, myRole) {
+  const snap = await dbRef(`rooms/${roomCode}/pendingActions`)
+    .orderByChild('seen').equalTo(false).once('value');
+  const actions = [];
+  snap.forEach(child => {
+    const d = child.val();
+    if (d.to === myRole) {
+      actions.push({ id: child.key, ...d });
+    }
+  });
+  return actions.sort((a, b) => a.timestamp - b.timestamp);
+}
+
+// ===================================================
+// HOME SCENE
+// ===================================================
+function showCreatePanel() {
+  document.getElementById('home-panel-main').classList.add('hidden');
+  document.getElementById('home-panel-create').classList.remove('hidden');
+  document.getElementById('home-panel-join').classList.add('hidden');
+
+  const code = genRoomCode();
+  state.roomCode = code;
+  document.getElementById('display-room-code').textContent = code;
+
+  createRoom(code).then(() => {
+    // Listen for partner joining
+    listenForPartner(code);
+  }).catch(err => {
+    console.error('Create room failed:', err);
+  });
+}
+
+function showJoinPanel() {
+  document.getElementById('home-panel-main').classList.add('hidden');
+  document.getElementById('home-panel-create').classList.add('hidden');
+  document.getElementById('home-panel-join').classList.remove('hidden');
+  document.getElementById('join-code-input').focus();
+}
+
+function backToMain() {
+  // Cleanup listeners
+  if (state.listeners.partner) {
+    state.listeners.partner();
+    delete state.listeners.partner;
+  }
+  state.roomCode = null;
+  document.getElementById('home-panel-main').classList.remove('hidden');
+  document.getElementById('home-panel-create').classList.add('hidden');
+  document.getElementById('home-panel-join').classList.add('hidden');
+  document.getElementById('join-error').classList.add('hidden');
+  document.getElementById('join-code-input').value = '';
+}
+
+function copyRoomCode() {
+  const code = state.roomCode;
+  const hint = document.getElementById('copy-hint');
+  if (navigator.clipboard) {
+    navigator.clipboard.writeText(code).then(() => {
+      hint.textContent = '✓ 已复制！';
+      hint.style.color = '#6bcb77';
+    });
+  } else {
+    // Fallback
+    const el = document.createElement('textarea');
+    el.value = code;
+    document.body.appendChild(el);
+    el.select();
+    document.execCommand('copy');
+    document.body.removeChild(el);
+    hint.textContent = '✓ 已复制！';
+    hint.style.color = '#6bcb77';
+  }
+  setTimeout(() => { hint.textContent = ''; }, 2000);
+}
+
+async function joinRoom() {
+  const code = document.getElementById('join-code-input').value.trim().toUpperCase();
+  const errEl = document.getElementById('join-error');
+
+  if (code.length !== 6) {
+    errEl.textContent = '请输入6位房间码';
+    errEl.classList.remove('hidden');
+    return;
+  }
+
+  errEl.classList.add('hidden');
+  const btn = document.querySelector('#home-panel-join .px-btn.pink');
+  btn.textContent = '连接中...';
+  btn.classList.add('gray');
+
+  try {
+    const exists = await roomExists(code);
+    if (!exists) {
+      errEl.textContent = '房间不存在，请检查房间码';
+      errEl.classList.remove('hidden');
+      btn.textContent = '进入小屋 →';
+      btn.classList.remove('gray');
+      return;
+    }
+
+    state.roomCode = code;
+    saveSession();
+    enterSelectScene(code);
+  } catch (e) {
+    errEl.textContent = '连接失败，请重试';
+    errEl.classList.remove('hidden');
+    btn.textContent = '进入小屋 →';
+    btn.classList.remove('gray');
+  }
+}
+
+function listenForPartner(roomCode) {
+  // When creator is waiting, also go to character select when they click "create"
+  saveSession();
+  enterSelectScene(roomCode);
+}
+
+// ===================================================
+// SELECT SCENE
+// ===================================================
+async function enterSelectScene(roomCode) {
+  document.getElementById('select-room-code').textContent = roomCode;
+  showScene('scene-select');
+
+  // Check current selections
+  const data = await getRoomData(roomCode);
+  if (data && data.players) {
+    updateCharacterCards(data.players);
+    if (data.status === 'active') {
+      enterGameScene(roomCode);
+      return;
+    }
+  }
+
+  // If we already have a role, show waiting
+  if (state.myRole) {
+    markCardSelected(state.myRole);
+    document.getElementById('select-waiting').classList.remove('hidden');
+  }
+
+  // Listen for changes
+  if (state.listeners.select) state.listeners.select();
+  state.listeners.select = dbRef(`rooms/${roomCode}`).on('value', snap => {
+    const d = snap.val();
+    if (!d) return;
+    if (d.players) updateCharacterCards(d.players);
+    if (d.status === 'active') {
+      if (state.listeners.select) {
+        dbRef(`rooms/${roomCode}`).off('value', state.listeners.select);
+        delete state.listeners.select;
+      }
+      enterGameScene(roomCode);
+    }
+  });
+}
+
+function updateCharacterCards(players) {
+  const pigTaken = players.pig && players.pig.uid && players.pig.uid !== state.uid;
+  const dogTaken = players.dog && players.dog.uid && players.dog.uid !== state.uid;
+
+  const pigCard = document.getElementById('card-pig');
+  const dogCard = document.getElementById('card-dog');
+
+  // Remove existing badges
+  pigCard.querySelectorAll('.char-taken-badge').forEach(b => b.remove());
+  dogCard.querySelectorAll('.char-taken-badge').forEach(b => b.remove());
+
+  if (pigTaken) {
+    pigCard.classList.add('taken');
+    const badge = document.createElement('div');
+    badge.className = 'char-taken-badge';
+    badge.textContent = 'TA选了';
+    pigCard.appendChild(badge);
+  } else {
+    pigCard.classList.remove('taken');
+  }
+
+  if (dogTaken) {
+    dogCard.classList.add('taken');
+    const badge = document.createElement('div');
+    badge.className = 'char-taken-badge';
+    badge.textContent = 'TA选了';
+    dogCard.appendChild(badge);
+  } else {
+    dogCard.classList.remove('taken');
+  }
+}
+
+function markCardSelected(role) {
+  const card = document.getElementById(`card-${role}`);
+  card.classList.add('selected');
+  document.getElementById('select-waiting').classList.remove('hidden');
+  document.getElementById('select-msg').textContent = `你选择了${role === 'pig' ? '🐷 小猪' : '🐶 小狗'}`;
+}
+
+async function selectCharacter(role) {
+  if (state.myRole) return; // already selected
+
+  const card = document.getElementById(`card-${role}`);
+  if (card.classList.contains('taken')) return;
+
+  state.myRole = role;
+  state.partnerRole = role === 'pig' ? 'dog' : 'pig';
+
+  await setPlayerRole(state.roomCode, role, state.uid);
+  markCardSelected(role);
+  saveSession();
+
+  // Check if partner already selected
+  const data = await getRoomData(state.roomCode);
+  if (data && data.players) {
+    const partnerData = data.players[state.partnerRole];
+    if (partnerData && partnerData.uid) {
+      // Both selected, activate room
+      await dbRef(`rooms/${state.roomCode}/status`).set('active');
+    }
+  }
+}
+
+// ===================================================
+// GAME SCENE
+// ===================================================
+async function enterGameScene(roomCode) {
+  if (state.listeners.select) {
+    dbRef(`rooms/${roomCode}`).off('value');
+    delete state.listeners.select;
+  }
+
+  document.getElementById('game-room-code').textContent = roomCode;
+  showScene('scene-game');
+
+  // Set my role label
+  document.getElementById('my-role-label').textContent = state.myRole === 'pig' ? '🐷我' : '🐶我';
+
+  // Update character labels
+  document.getElementById('pig-label').textContent = state.myRole === 'pig' ? '🐷(你)' : '🐷';
+  document.getElementById('dog-label').textContent = state.myRole === 'dog' ? '🐶(你)' : '🐶';
+
+  // Load game data
+  const data = await getRoomData(roomCode);
+  if (data) {
+    if (data.intimacy !== undefined) updateIntimacyUI(data.intimacy);
+    if (data.cat) updateCatUI(data.cat);
+  }
+
+  // Mark myself online
+  if (state.myRole) {
+    await dbRef(`rooms/${roomCode}/players/${state.myRole}/online`).set(true);
+    dbRef(`rooms/${roomCode}/players/${state.myRole}/online`).onDisconnect().set(false);
+    dbRef(`rooms/${roomCode}/players/${state.myRole}/lastSeen`).onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
+  }
+
+  // Start listeners
+  startGameListeners(roomCode);
+
+  // Process pending notifications
+  setTimeout(() => processNotifications(), 800);
+
+  // Start cat hunger decay check
+  startCatDecay();
+}
+
+function startGameListeners(roomCode) {
+  // Intimacy
+  dbRef(`rooms/${roomCode}/intimacy`).on('value', snap => {
+    const val = snap.val() || 0;
+    state.intimacy = val;
+    updateIntimacyUI(val);
+  });
+
+  // Partner online status
+  const partnerRole = state.partnerRole;
+  if (partnerRole) {
+    dbRef(`rooms/${roomCode}/players/${partnerRole}/online`).on('value', snap => {
+      const online = snap.val();
+      updatePartnerStatus(online);
+    });
+  }
+
+  // Both players online status for indicators
+  dbRef(`rooms/${roomCode}/players`).on('value', snap => {
+    const players = snap.val();
+    if (!players) return;
+    const pigOnline = players.pig && players.pig.online;
+    const dogOnline = players.dog && players.dog.online;
+    document.getElementById('pig-online-dot').className = 'char-online-dot' + (pigOnline ? '' : ' char-offline-dot');
+    document.getElementById('dog-online-dot').className = 'char-online-dot' + (dogOnline ? '' : ' char-offline-dot');
+  });
+
+  // Cat data
+  dbRef(`rooms/${roomCode}/cat`).on('value', snap => {
+    const cat = snap.val();
+    if (cat) {
+      state.catData = cat;
+      updateCatUI(cat);
+    }
+  });
+
+  // Pending actions (real-time for when partner sends something while online)
+  dbRef(`rooms/${roomCode}/pendingActions`)
+    .orderByChild('seen').equalTo(false)
+    .on('child_added', async snap => {
+      const d = snap.val();
+      if (d && d.to === state.myRole && !d.seen) {
+        // Small delay to avoid double-processing on page load
+        if (state.initialized) {
+          await markActionSeen(roomCode, snap.key);
+          playActionOnMe(d.action, d.from, d.timestamp, false);
+        }
+      }
+    });
+
+  // Short delay before real-time mode activates
+  setTimeout(() => { state.initialized = true; }, 1500);
+}
+
+function updatePartnerStatus(online) {
+  const emoji = document.getElementById('partner-status-emoji');
+  const text = document.getElementById('partner-status-text');
+  if (online) {
+    emoji.textContent = '✨';
+    text.textContent = '在线';
+    text.style.color = '#6bcb77';
+  } else {
+    emoji.textContent = '💤';
+    text.textContent = '离线中';
+    text.style.color = '#888';
+  }
+}
+
+// ===================================================
+// INTIMACY SYSTEM
+// ===================================================
+function updateIntimacyUI(score) {
+  state.intimacy = score;
+
+  // Find level
+  let level = INTIMACY_LEVELS[0];
+  let prevMax = 0;
+  for (const l of INTIMACY_LEVELS) {
+    if (score >= l.min) {
+      level = l;
+      prevMax = l.min;
+    }
+  }
+
+  const range = level.max - level.min;
+  const progress = Math.min(100, ((score - level.min) / range) * 100);
+
+  document.getElementById('intimacy-level-name').textContent = level.name;
+  document.getElementById('intimacy-score').textContent = score;
+  document.getElementById('intimacy-bar').style.width = progress + '%';
+}
+
+function checkLevelUp(oldScore, newScore) {
+  let oldLevel = null, newLevel = null;
+  for (const l of INTIMACY_LEVELS) {
+    if (oldScore >= l.min) oldLevel = l;
+    if (newScore >= l.min) newLevel = l;
+  }
+  if (newLevel && oldLevel && newLevel.name !== oldLevel.name) {
+    showLevelUp(newLevel);
+  }
+}
+
+function showLevelUp(level) {
+  const pop = document.createElement('div');
+  pop.className = 'level-up-pop';
+  pop.innerHTML = `
+    <span class="level-up-emoji">${level.emoji}</span>
+    <div class="level-up-text">关系升级！</div>
+    <div style="font-size:8px; color:#ff6b9d; margin-top:8px; font-family:'PingFang SC',system-ui;">${level.name}</div>
+  `;
+  document.body.appendChild(pop);
+  setTimeout(() => pop.remove(), 3000);
+}
+
+// ===================================================
+// ACTION SYSTEM
+// ===================================================
+async function doAction(actionType) {
+  if (state.actionCooldown) return;
+  if (!state.myRole || !state.roomCode) return;
+
+  state.actionCooldown = true;
+  setTimeout(() => { state.actionCooldown = false; }, 800);
+
+  const config = ACTION_CONFIG[actionType];
+  const oldScore = state.intimacy;
+
+  // Play animation on self (sending side shows outgoing anim)
+  playOutgoingAnim(actionType);
+
+  // Send to Firebase
+  try {
+    await sendAction(state.roomCode, state.myRole, state.partnerRole, actionType);
+    checkLevelUp(oldScore, state.intimacy + config.pts);
+  } catch (e) {
+    console.error('Send action failed:', e);
+  }
+}
+
+// ===================================================
+// ANIMATION ENGINE
+// ===================================================
+function getCharElem(role) {
+  return document.getElementById(`char-${role}`);
+}
+
+function getCharPos(role) {
+  const el = getCharElem(role);
+  if (!el) return { x: 0, y: 0 };
+  const vp = document.getElementById('game-viewport');
+  const vpRect = vp.getBoundingClientRect();
+  const rect = el.getBoundingClientRect();
+  return {
+    x: rect.left - vpRect.left + rect.width / 2,
+    y: rect.top - vpRect.top + rect.height / 2
+  };
+}
+
+function spawnParticle(opts) {
+  const layer = document.getElementById('anim-layer');
+  const el = document.createElement('div');
+  el.className = 'particle ' + (opts.cls || '');
+  el.textContent = opts.emoji || '✨';
+  el.style.cssText = `
+    left: ${opts.x}px;
+    top: ${opts.y}px;
+    --tx: ${opts.tx || 0}px;
+    --ty: ${opts.ty || -80}px;
+    --dur: ${opts.dur || 1.5}s;
+    font-size: ${opts.size || 20}px;
+  `;
+  layer.appendChild(el);
+  setTimeout(() => el.remove(), (opts.dur || 1.5) * 1000 + 100);
+}
+
+function playOutgoingAnim(actionType) {
+  const myPos = getCharPos(state.myRole);
+  const partnerPos = getCharPos(state.partnerRole);
+  const config = ACTION_CONFIG[actionType];
+
+  const dx = partnerPos.x - myPos.x;
+  const dy = partnerPos.y - myPos.y;
+
+  switch (config.anim) {
+    case 'fart':
+      for (let i = 0; i < 5; i++) {
+        setTimeout(() => {
+          spawnParticle({
+            emoji: '💨',
+            x: myPos.x + (Math.random() - 0.5) * 20,
+            y: myPos.y,
+            tx: dx * (0.6 + Math.random() * 0.4),
+            ty: dy - 20 + (Math.random() - 0.5) * 40,
+            dur: 1.2 + Math.random() * 0.5,
+            cls: 'particle-arc',
+            size: 16 + Math.floor(Math.random() * 12)
+          });
+        }, i * 100);
+      }
+      break;
+
+    case 'arc':
+      spawnParticle({
+        emoji: config.emoji,
+        x: myPos.x,
+        y: myPos.y,
+        tx: dx,
+        ty: dy,
+        dur: 1.0,
+        cls: 'particle-arc',
+        size: 28
+      });
+      break;
+
+    case 'hearts':
+      const hearts = ['❤️', '💕', '💖', '💗', '💓'];
+      for (let i = 0; i < 6; i++) {
+        setTimeout(() => {
+          spawnParticle({
+            emoji: hearts[Math.floor(Math.random() * hearts.length)],
+            x: myPos.x + (Math.random() - 0.5) * 30,
+            y: myPos.y,
+            tx: (Math.random() - 0.5) * 80,
+            ty: -80 - Math.random() * 60,
+            dur: 1.0 + Math.random() * 0.5,
+            cls: 'heart-burst',
+            size: 18 + Math.floor(Math.random() * 14)
+          });
+        }, i * 80);
+      }
+      break;
+
+    case 'poke':
+      // Just shake partner visually (handled in playActionOnMe)
+      spawnParticle({
+        emoji: '👆',
+        x: myPos.x,
+        y: myPos.y,
+        tx: dx,
+        ty: dy,
+        dur: 0.8,
+        cls: 'particle-arc',
+        size: 24
+      });
+      break;
+
+    case 'pet':
+      playPetAnimation();
+      break;
+  }
+}
+
+function playActionOnMe(actionType, fromRole, timestamp, isReplay) {
+  const config = ACTION_CONFIG[actionType];
+  const myElem = getCharElem(state.myRole);
+
+  if (actionType === 'poke') {
+    myElem.classList.add('shaking');
+    setTimeout(() => myElem.classList.remove('shaking'), 700);
+  } else if (actionType === 'pet') {
+    playPetAnimation();
+  } else if (config.anim === 'hearts') {
+    const myPos = getCharPos(state.myRole);
+    const hearts = ['❤️', '💕', '💖', '💗'];
+    for (let i = 0; i < 4; i++) {
+      setTimeout(() => {
+        spawnParticle({
+          emoji: hearts[i % hearts.length],
+          x: myPos.x + (Math.random() - 0.5) * 30,
+          y: myPos.y - 10,
+          tx: (Math.random() - 0.5) * 60,
+          ty: -70 - Math.random() * 40,
+          dur: 1.2,
+          cls: 'heart-burst',
+          size: 20
+        });
+      }, i * 100);
+    }
+  } else if (config.anim === 'arc' || config.anim === 'fart') {
+    const myPos = getCharPos(state.myRole);
+    spawnParticle({
+      emoji: config.emoji,
+      x: myPos.x,
+      y: myPos.y - 20,
+      tx: (Math.random() - 0.5) * 30,
+      ty: -50,
+      dur: 1.0,
+      cls: 'particle-arc',
+      size: 26
+    });
+  }
+
+  // Show notification card
+  showActionNotif(config, fromRole, timestamp, isReplay);
+}
+
+function playPetAnimation() {
+  const catNpc = document.getElementById('cat-npc');
+  catNpc.classList.add('cat-happy');
+  setTimeout(() => catNpc.classList.remove('cat-happy'), 600);
+
+  const catPos = document.getElementById('cat-npc').getBoundingClientRect();
+  const vpRect = document.getElementById('game-viewport').getBoundingClientRect();
+
+  // Show purr text
+  const purr = document.createElement('div');
+  purr.className = 'purr-text';
+  const texts = ['呼噜噜~', 'Purr~', '好舒服~', '喵~'];
+  purr.textContent = texts[Math.floor(Math.random() * texts.length)];
+  purr.style.left = (catPos.left - vpRect.left + catPos.width / 2) + 'px';
+  purr.style.top = (catPos.top - vpRect.top) + 'px';
+  document.getElementById('anim-layer').appendChild(purr);
+  setTimeout(() => purr.remove(), 2100);
+
+  // Paw particles
+  for (let i = 0; i < 3; i++) {
+    setTimeout(() => {
+      spawnParticle({
+        emoji: '🐾',
+        x: catPos.left - vpRect.left + catPos.width / 2 + (Math.random() - 0.5) * 30,
+        y: catPos.top - vpRect.top,
+        tx: (Math.random() - 0.5) * 40,
+        ty: -40,
+        dur: 1.0,
+        cls: 'paw-float',
+        size: 14
+      });
+    }, i * 150);
+  }
+}
+
+// ===================================================
+// CAT NPC SYSTEM
+// ===================================================
+function updateCatUI(catData) {
+  state.catData = catData;
+
+  // Calculate effective hunger (decay over time)
+  const hoursSince = (Date.now() - (catData.lastFed || Date.now())) / 3600000;
+  const hunger = Math.max(0, Math.min(100, (catData.hunger || 80) - hoursSince * 10));
+
+  let emoji = '🐱';
+  if (hunger > 70) emoji = '🐱';
+  else if (hunger > 30) emoji = '😾';
+  else emoji = '😿';
+
+  document.getElementById('cat-emoji').textContent = emoji;
+  document.getElementById('cat-hunger-fill').style.width = hunger + '%';
+
+  // Show feed button if hungry
+  const feedBtn = document.getElementById('feed-cat-btn');
+  if (hunger <= 40) {
+    feedBtn.classList.remove('hidden');
+  } else {
+    feedBtn.classList.add('hidden');
+  }
+}
+
+async function feedCat() {
+  if (!state.roomCode) return;
+  await dbRef(`rooms/${state.roomCode}/cat`).update({
+    hunger: 100,
+    lastFed: Date.now(),
+    mood: 'happy'
+  });
+
+  // Happy animation
+  playPetAnimation();
+
+  // Cat extra animation
+  const catEl = document.getElementById('cat-npc');
+  catEl.classList.add('cat-happy');
+  setTimeout(() => catEl.classList.remove('cat-happy'), 800);
+}
+
+function petCat() {
+  doAction('pet');
+}
+
+function startCatDecay() {
+  // Check every 5 minutes
+  setInterval(() => {
+    if (!state.roomCode) return;
+    // Just re-read from Firebase, updateCatUI will calc decay
+    dbRef(`rooms/${state.roomCode}/cat`).once('value').then(snap => {
+      if (snap.val()) updateCatUI(snap.val());
+    });
+  }, 300000);
+}
+
+// ===================================================
+// NOTIFICATION SYSTEM
+// ===================================================
+async function processNotifications() {
+  if (state.isProcessingNotifs || !state.roomCode || !state.myRole) return;
+  state.isProcessingNotifs = true;
+
+  try {
+    const actions = await getUnseenActions(state.roomCode, state.myRole);
+    for (const action of actions) {
+      await markActionSeen(state.roomCode, action.id);
+      playActionOnMe(action.action, action.from, action.timestamp, true);
+      await new Promise(r => setTimeout(r, 1200));
+    }
+  } catch (e) {
+    console.error('Process notifs failed:', e);
+  } finally {
+    state.isProcessingNotifs = false;
+  }
+}
+
+function showActionNotif(config, fromRole, timestamp, isReplay) {
+  const overlay = document.getElementById('notif-overlay');
+  const senderName = fromRole === 'pig' ? '🐷 小猪' : '🐶 小狗';
+
+  const card = document.createElement('div');
+  card.className = 'notif-card';
+  card.innerHTML = `
+    <div class="notif-header">
+      <span class="notif-sender">${senderName}</span>
+      <span class="notif-time">${relativeTime(timestamp)}</span>
+    </div>
+    <div class="notif-body">
+      <span class="notif-emoji">${config.emoji}</span>
+      <span class="notif-msg">${config.msg}</span>
+    </div>
+    <button class="notif-close" onclick="dismissNotif(this.parentElement)">×</button>
+  `;
+
+  overlay.appendChild(card);
+
+  setTimeout(() => dismissNotif(card), 4000);
+}
+
+function dismissNotif(card) {
+  if (!card || !card.parentElement) return;
+  card.classList.add('leaving');
+  setTimeout(() => { if (card.parentElement) card.remove(); }, 300);
+}
+
+// ===================================================
+// VISIBILITY CHANGE (WeChat back from background)
+// ===================================================
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    if (state.roomCode && state.myRole) {
+      // Mark online again
+      dbRef(`rooms/${state.roomCode}/players/${state.myRole}/online`).set(true);
+      // Process missed notifications
+      setTimeout(() => processNotifications(), 500);
+    }
+  } else {
+    if (state.roomCode && state.myRole) {
+      dbRef(`rooms/${state.roomCode}/players/${state.myRole}/online`).set(false);
+      dbRef(`rooms/${state.roomCode}/players/${state.myRole}/lastSeen`).set(Date.now());
+    }
+  }
+});
+
+// Prevent pull-to-refresh
+document.addEventListener('touchmove', (e) => {
+  if (e.touches.length > 1) e.preventDefault();
+}, { passive: false });
+
+let lastTouchY = 0;
+document.addEventListener('touchstart', (e) => {
+  lastTouchY = e.touches[0].clientY;
+}, { passive: true });
+
+document.addEventListener('touchmove', (e) => {
+  const el = document.querySelector('.scene.active');
+  if (!el) return;
+  if (el.scrollTop === 0 && e.touches[0].clientY > lastTouchY) {
+    e.preventDefault();
+  }
+}, { passive: false });
+
+// ===================================================
+// SESSION RESTORE & INITIALIZATION
+// ===================================================
+async function init() {
+  // Generate UID if needed
+  let { uid, room, role } = loadSession();
+  if (!uid) {
+    uid = genUID();
+    localStorage.setItem('pigdog_uid', uid);
+  }
+  state.uid = uid;
+
+  // Generate stars
+  generateStars();
+
+  // Init Firebase
+  const ok = initFirebase();
+  if (!ok) {
+    showScene('scene-home');
+    return;
+  }
+
+  // Try to restore session
+  if (room && role) {
+    try {
+      const exists = await roomExists(room);
+      if (exists) {
+        const data = await getRoomData(room);
+        if (data && data.status === 'active') {
+          // Check if our role slot still has our UID
+          const roleData = data.players && data.players[role];
+          if (roleData && roleData.uid === uid) {
+            state.roomCode = room;
+            state.myRole = role;
+            state.partnerRole = role === 'pig' ? 'dog' : 'pig';
+            await enterGameScene(room);
+            return;
+          }
+        }
+        // Room exists but not active yet, go to select
+        if (data && data.status === 'waiting') {
+          state.roomCode = room;
+          if (role) {
+            state.myRole = role;
+            state.partnerRole = role === 'pig' ? 'dog' : 'pig';
+          }
+          await enterSelectScene(room);
+          return;
+        }
+      }
+    } catch (e) {
+      console.error('Session restore failed:', e);
+    }
+    // If restore fails, clear and go home
+    clearSession();
+  }
+
+  showScene('scene-home');
+}
+
+// ===================================================
+// BOOT
+// ===================================================
+window.addEventListener('load', () => {
+  // Small delay for fonts to load
+  setTimeout(init, 300);
+});
+</script>
+</body>
+</html>
