@@ -587,15 +587,16 @@
     /* 绿植 */
     .deco-plant {
       position: absolute;
-      bottom: 40%;
+      bottom: calc(40% - 2px);
       display: flex;
       flex-direction: column;
       align-items: center;
       pointer-events: none;
+      z-index: 1;   /* behind sofa (sofa has default z-index) */
     }
 
-    .deco-plant.left  { left: 8px; }
-    .deco-plant.right { right: 8px; }
+    .deco-plant.left  { left: 4px; }
+    .deco-plant.right { right: 4px; }
 
     .plant-leaves {
       font-size: 28px;
@@ -707,6 +708,7 @@
       flex-direction: column;
       align-items: center;
       pointer-events: none;
+      z-index: 2;
     }
 
     /* 沙发靠背 */
@@ -799,6 +801,7 @@
       justify-content: space-around;
       align-items: flex-end;
       pointer-events: none;
+      z-index: 3;
     }
 
     .sofa-char {
@@ -2046,6 +2049,16 @@
         <span class="btn-label">撸小老头</span>
         <span class="btn-pts">+8</span>
       </div>
+      <div class="action-btn" onclick="menuAction('butt')">
+        <span class="btn-emoji">🍑</span>
+        <span class="btn-label">摸屁屁</span>
+        <span class="btn-pts">+12</span>
+      </div>
+      <div class="action-btn" onclick="menuAction('lullaby')">
+        <span class="btn-emoji">🌙</span>
+        <span class="btn-label">哄睡觉</span>
+        <span class="btn-pts">+18</span>
+      </div>
     </div>
   </div>
 </div>
@@ -2129,14 +2142,16 @@ let state = {
 };
 
 const ACTION_CONFIG = {
-  fart:   { emoji: '💨', pts: 5,  msg: '朝你放了个屁~',          anim: 'fart'   },
-  water:  { emoji: '🥤', pts: 10, msg: '给你喂水喝~',            anim: 'arc'    },
-  food:   { emoji: '🍜', pts: 15, msg: '给你做了好吃的！',        anim: 'arc'    },
-  hug:    { emoji: '🤗', pts: 20, msg: '给你一个大大的抱抱！',    anim: 'hearts' },
-  kiss:   { emoji: '😘', pts: 25, msg: '亲亲你~💋',              anim: 'hearts' },
-  poke:   { emoji: '👆', pts: 3,  msg: '戳了你一下！',            anim: 'poke'   },
-  pet:    { emoji: '🐾', pts: 8,  msg: '在撸小老头~',              anim: 'pet'    },
-  letter: { emoji: '💌', pts: 10, msg: '给你写了一封信~',         anim: 'arc'    }
+  fart:    { emoji: '💨', pts: 5,  msg: '朝你放了一个大臭屁！',      anim: 'fart'   },
+  water:   { emoji: '🥤', pts: 10, msg: '给宝宝喂水喝~',             anim: 'arc'    },
+  food:    { emoji: '🍜', pts: 15, msg: '给宝贝做好吃的！',           anim: 'arc'    },
+  hug:     { emoji: '🤗', pts: 20, msg: '给宝宝一个大大的拥抱！',     anim: 'hearts' },
+  kiss:    { emoji: '😘', pts: 25, msg: '亲亲宝宝~💋',               anim: 'hearts' },
+  poke:    { emoji: '👆', pts: 3,  msg: '戳了你一下！',               anim: 'poke'   },
+  pet:     { emoji: '🐾', pts: 8,  msg: '撸了撸小老头~',              anim: 'pet'    },
+  butt:    { emoji: '🍑', pts: 12, msg: '摸了摸你的小屁屁~',          anim: 'poke'   },
+  lullaby: { emoji: '🌙', pts: 18, msg: '哄宝宝睡觉觉~',              anim: 'lullaby'},
+  letter:  { emoji: '💌', pts: 10, msg: '给你写了一封信~',            anim: 'arc'    }
 };
 
 const DAILY_MAX = 200;
@@ -2825,6 +2840,16 @@ function playOutgoingAnim(actionType) {
     case 'pet':
       playPetAnimation();
       break;
+    case 'lullaby':
+      playLullabyAnimation(myPos);
+      break;
+    case 'poke':
+      spawnParticle({
+        emoji: actionType === 'butt' ? '🍑' : '👆',
+        x: myPos.x, y: myPos.y,
+        tx: dx, ty: dy, dur: 0.8, cls: 'particle-arc', size: 24
+      });
+      break;
   }
 }
 
@@ -2866,6 +2891,20 @@ function playActionOnMe(actionType, fromRole, timestamp, isReplay, content) {
       cls: 'particle-arc',
       size: 26
     });
+  } else if (actionType === 'butt') {
+    myElem.classList.add('shaking');
+    setTimeout(() => myElem.classList.remove('shaking'), 700);
+    const myPos = getCharPos(state.myRole);
+    for (let i = 0; i < 3; i++) {
+      setTimeout(() => spawnParticle({
+        emoji: '🍑', x: myPos.x + (Math.random()-0.5)*20, y: myPos.y,
+        tx: (Math.random()-0.5)*50, ty: -50 - Math.random()*30,
+        dur: 1.0, cls: 'heart-burst', size: 20
+      }), i * 120);
+    }
+  } else if (actionType === 'lullaby') {
+    const myPos = getCharPos(state.myRole);
+    playLullabyAnimation(myPos);
   }
 
   // Show notification card
@@ -2904,6 +2943,24 @@ function playPetAnimation() {
         size: 14
       });
     }, i * 150);
+  }
+}
+
+function playLullabyAnimation(pos) {
+  const stars = ['🌙', '⭐', '✨', '💤', '🌟'];
+  for (let i = 0; i < 7; i++) {
+    setTimeout(() => {
+      spawnParticle({
+        emoji: stars[i % stars.length],
+        x: pos.x + (Math.random() - 0.5) * 40,
+        y: pos.y - 10,
+        tx: (Math.random() - 0.5) * 70,
+        ty: -80 - Math.random() * 50,
+        dur: 1.5 + Math.random() * 0.5,
+        cls: 'heart-burst',
+        size: 16 + Math.floor(Math.random() * 10)
+      });
+    }, i * 100);
   }
 }
 
