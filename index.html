@@ -520,51 +520,179 @@
     .cabin-curtain-left  { left: calc(50% - 58px); border-radius: 0 0 8px 0; }
     .cabin-curtain-right { left: calc(50% + 40px);  border-radius: 0 0 0 8px; }
 
-    /* 墙上相框 */
-    .wall-photos {
+    /* ===== 墙面装饰 ===== */
+    /* 挂钟 */
+    .wall-clock {
       position: absolute;
-      top: 18px;
-      left: 0;
-      right: 0;
-      display: flex;
-      justify-content: space-between;
-      padding: 0 12px;
-      pointer-events: none;
-    }
-
-    .photo-frame {
+      top: 16px;
+      right: 18px;
+      width: 34px;
+      height: 34px;
+      background: #f5e6c8;
       border: 3px solid #8b6914;
-      box-shadow: 2px 2px 0 #5a4208, inset 0 0 0 2px #c8a84a;
-      background: #fff;
+      border-radius: 50%;
+      box-shadow: 2px 2px 0 #5a4208;
       display: flex;
       align-items: center;
       justify-content: center;
-      font-size: 18px;
-      flex-direction: column;
-      gap: 1px;
-      position: relative;
+      font-size: 14px;
     }
 
-    .photo-frame::after {
+    .wall-clock::before {
       content: '';
       position: absolute;
-      top: -8px;
+      top: -7px;
       left: 50%;
       transform: translateX(-50%);
       width: 6px;
-      height: 8px;
+      height: 7px;
       background: #8b6914;
       border: 1px solid #5a4208;
     }
 
-    .photo-frame.small  { width: 38px; height: 32px; font-size: 14px; }
-    .photo-frame.medium { width: 46px; height: 38px; font-size: 16px; }
+    /* 壁灯 */
+    .wall-lamp {
+      position: absolute;
+      top: 12px;
+      left: 16px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 0;
+    }
 
-    .photo-caption {
-      font-size: 4px;
-      color: #888;
-      font-family: 'Press Start 2P', system-ui;
+    .wall-lamp-bracket {
+      width: 6px;
+      height: 14px;
+      background: #8b6914;
+      border: 1px solid #5a4208;
+    }
+
+    .wall-lamp-shade {
+      width: 26px;
+      height: 16px;
+      background: linear-gradient(180deg, #ffd93d 0%, #ffb800 100%);
+      border: 2px solid #8b6914;
+      clip-path: polygon(10% 0%, 90% 0%, 100% 100%, 0% 100%);
+    }
+
+    .wall-lamp-glow {
+      width: 30px;
+      height: 10px;
+      background: radial-gradient(ellipse, rgba(255,220,80,0.5) 0%, transparent 70%);
+      margin-top: -2px;
+    }
+
+    /* ===== 地板装饰物 ===== */
+    /* 绿植 */
+    .deco-plant {
+      position: absolute;
+      bottom: 40%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      pointer-events: none;
+    }
+
+    .deco-plant.left  { left: 8px; }
+    .deco-plant.right { right: 8px; }
+
+    .plant-leaves {
+      font-size: 28px;
       line-height: 1;
+      display: block;
+      animation: float 4s ease-in-out infinite;
+    }
+
+    .deco-plant.right .plant-leaves { animation-delay: -2s; }
+
+    .plant-pot {
+      width: 20px;
+      height: 14px;
+      background: linear-gradient(180deg, #c0692b 0%, #a0521e 100%);
+      border: 2px solid #7a3e14;
+      clip-path: polygon(5% 0%, 95% 0%, 85% 100%, 15% 100%);
+      margin-top: -2px;
+    }
+
+    .plant-pot-rim {
+      width: 24px;
+      height: 5px;
+      background: #c0692b;
+      border: 2px solid #7a3e14;
+      margin-top: -1px;
+    }
+
+    /* 小地毯 */
+    .floor-rug {
+      position: absolute;
+      bottom: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 78%;
+      max-width: 300px;
+      height: 12px;
+      background: repeating-linear-gradient(
+        90deg,
+        #9b59b6 0px, #9b59b6 8px,
+        #8e44ad 8px, #8e44ad 10px,
+        #f39c12 10px, #f39c12 14px,
+        #8e44ad 14px, #8e44ad 16px,
+        #9b59b6 16px, #9b59b6 24px
+      );
+      border-top: 3px solid #7d3c98;
+      border-bottom: 3px solid #7d3c98;
+      z-index: 2;
+    }
+
+    /* 茶几 */
+    .coffee-table {
+      position: absolute;
+      bottom: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 3;
+    }
+
+    .table-top {
+      width: 80px;
+      height: 8px;
+      background: linear-gradient(180deg, #8b5e2a 0%, #6b4418 100%);
+      border: 2px solid #4a2e10;
+      box-shadow: 0 2px 0 #3a2008;
+    }
+
+    .table-legs {
+      display: flex;
+      justify-content: space-between;
+      padding: 0 8px;
+    }
+
+    .table-leg {
+      width: 5px;
+      height: 10px;
+      background: #6b4418;
+      border: 1px solid #4a2e10;
+    }
+
+    /* 茶杯 */
+    .table-items {
+      position: absolute;
+      bottom: 40%;
+      left: 50%;
+      transform: translateX(-50%);
+      display: flex;
+      gap: 6px;
+      align-items: flex-end;
+      z-index: 4;
+      padding-bottom: 18px;
+      pointer-events: none;
+    }
+
+    .tea-cup {
+      font-size: 14px;
+      line-height: 1;
+      display: block;
     }
 
     /* 沙发 */
@@ -1763,14 +1891,48 @@
       <!-- 窗帘 -->
       <div class="cabin-curtain-left"></div>
       <div class="cabin-curtain-right"></div>
-      <!-- 墙上相框 -->
-      <div class="wall-photos">
-        <div class="photo-frame small">🐷<div class="photo-caption">小猪</div></div>
-        <div class="photo-frame medium">🐷🐶<div class="photo-caption">合照</div></div>
-        <div class="photo-frame small">🐶<div class="photo-caption">小狗</div></div>
+      <!-- 壁灯（左上） -->
+      <div class="wall-lamp">
+        <div class="wall-lamp-bracket"></div>
+        <div class="wall-lamp-shade"></div>
+        <div class="wall-lamp-glow"></div>
       </div>
+      <!-- 挂钟（右上） -->
+      <div class="wall-clock">🕐</div>
       <!-- 地板 -->
       <div class="cabin-floor"></div>
+    </div>
+
+    <!-- 地毯 -->
+    <div class="floor-rug"></div>
+
+    <!-- 左侧绿植 -->
+    <div class="deco-plant left">
+      <span class="plant-leaves">🌿</span>
+      <div class="plant-pot-rim"></div>
+      <div class="plant-pot"></div>
+    </div>
+
+    <!-- 右侧绿植 -->
+    <div class="deco-plant right">
+      <span class="plant-leaves">🪴</span>
+      <div class="plant-pot-rim"></div>
+      <div class="plant-pot"></div>
+    </div>
+
+    <!-- 茶几 -->
+    <div class="coffee-table">
+      <div class="table-top"></div>
+      <div class="table-legs">
+        <div class="table-leg"></div>
+        <div class="table-leg"></div>
+      </div>
+    </div>
+
+    <!-- 茶几上的物品 -->
+    <div class="table-items">
+      <span class="tea-cup">☕</span>
+      <span class="tea-cup">🍵</span>
     </div>
 
     <!-- 沙发 -->
@@ -1793,19 +1955,19 @@
       </div>
     </div>
 
-    <!-- 沙发上的角色：小猪 / 小老头猫(中间) / 小狗 -->
+    <!-- 沙发上的角色：小老头(左) / 小猪(中) / 小狗(右) -->
     <div class="sofa-characters">
-      <div class="sofa-char" id="char-pig" onclick="openCharMenu('pig')">
-        <div class="char-online-dot" id="pig-online-dot"></div>
-        <span class="sofa-char-emoji pig">🐷</span>
-        <span class="char-label" id="pig-label">小猪</span>
-      </div>
       <div class="sofa-char" id="cat-npc" onclick="petCat()">
         <span class="sofa-char-emoji cat" id="cat-emoji">🐱</span>
         <span class="char-label" style="border-color:#ff9d3d; color:#ff9d3d;">小老头</span>
         <div class="sofa-cat-bar">
           <div class="sofa-cat-bar-fill" id="cat-hunger-fill" style="width:80%"></div>
         </div>
+      </div>
+      <div class="sofa-char" id="char-pig" onclick="openCharMenu('pig')">
+        <div class="char-online-dot" id="pig-online-dot"></div>
+        <span class="sofa-char-emoji pig">🐷</span>
+        <span class="char-label" id="pig-label">小猪</span>
       </div>
       <div class="sofa-char" id="char-dog" onclick="openCharMenu('dog')">
         <div class="char-online-dot" id="dog-online-dot"></div>
