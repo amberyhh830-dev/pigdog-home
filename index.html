@@ -771,10 +771,166 @@
       cursor: pointer;
       flex-shrink: 0;
       line-height: 1;
+      position: relative;
     }
 
     .log-btn:active {
       background: #ff6b9d22;
+    }
+
+    /* red dot badge */
+    .red-dot {
+      position: absolute;
+      top: 2px;
+      right: 2px;
+      width: 8px;
+      height: 8px;
+      background: #ff3b3b;
+      border-radius: 50%;
+      border: 1px solid #0d0520;
+      box-shadow: 0 0 4px #ff3b3b;
+      pointer-events: none;
+    }
+
+    .red-dot.hidden { display: none; }
+
+    /* ===== LETTER MODAL ===== */
+    .letter-overlay {
+      position: fixed;
+      inset: 0;
+      z-index: 70;
+      background: rgba(0,0,0,0.7);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      padding: 24px 16px;
+    }
+
+    .letter-overlay.hidden { display: none; }
+
+    .letter-paper {
+      background: #fdf6e3;
+      border: 3px solid #1a0a2e;
+      box-shadow: 8px 8px 0 #1a0a2e;
+      width: 100%;
+      max-width: 360px;
+      padding: 24px 20px 20px;
+      display: flex;
+      flex-direction: column;
+      gap: 14px;
+      position: relative;
+      animation: popIn 0.25s ease;
+    }
+
+    .letter-stamp {
+      position: absolute;
+      top: 12px;
+      right: 14px;
+      font-size: 28px;
+      opacity: 0.5;
+      transform: rotate(8deg);
+    }
+
+    .letter-to {
+      font-size: 7px;
+      color: #555;
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .letter-to span {
+      color: #c0392b;
+    }
+
+    .letter-divider {
+      border: none;
+      border-top: 2px dashed #c8b89a;
+    }
+
+    .letter-textarea {
+      font-family: 'PingFang SC', 'Microsoft YaHei', system-ui;
+      font-size: 14px;
+      color: #333;
+      background: transparent;
+      border: none;
+      outline: none;
+      resize: none;
+      height: 100px;
+      line-height: 1.8;
+      width: 100%;
+      /* lined paper effect */
+      background-image: repeating-linear-gradient(
+        transparent,
+        transparent 27px,
+        #c8b89a 27px,
+        #c8b89a 28px
+      );
+      padding-top: 4px;
+    }
+
+    .letter-textarea::placeholder { color: #bbb; }
+
+    .letter-counter {
+      font-size: 7px;
+      color: #aaa;
+      text-align: right;
+      font-family: 'Press Start 2P', system-ui;
+    }
+
+    .letter-counter.warn { color: #e74c3c; }
+
+    .letter-actions {
+      display: flex;
+      gap: 10px;
+    }
+
+    .letter-send-btn {
+      flex: 1;
+      font-family: 'Press Start 2P', system-ui;
+      font-size: 8px;
+      color: #fff;
+      background: #c0392b;
+      border: 3px solid #1a0a2e;
+      box-shadow: 4px 4px 0 #1a0a2e;
+      padding: 10px;
+      cursor: pointer;
+    }
+
+    .letter-send-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 #1a0a2e;
+    }
+
+    .letter-cancel-btn {
+      font-family: 'Press Start 2P', system-ui;
+      font-size: 8px;
+      color: #888;
+      background: #eee;
+      border: 3px solid #1a0a2e;
+      box-shadow: 4px 4px 0 #1a0a2e;
+      padding: 10px 14px;
+      cursor: pointer;
+    }
+
+    .letter-cancel-btn:active {
+      transform: translate(4px, 4px);
+      box-shadow: 0 0 0 #1a0a2e;
+    }
+
+    /* log item for letter type */
+    .log-item.letter-item .log-msg {
+      color: #ffd93d;
+      font-style: normal;
+    }
+
+    .log-letter-body {
+      margin-top: 4px;
+      font-size: 7px;
+      color: #aaa;
+      font-family: 'PingFang SC', system-ui;
+      line-height: 1.6;
+      background: #ffffff08;
+      padding: 6px 8px;
+      border-left: 2px solid #ff6b9d44;
     }
 
     /* ===== LOG DRAWER ===== */
@@ -1295,7 +1451,14 @@
         <div class="intimacy-bar-fill" id="intimacy-bar" style="width:0%"></div>
       </div>
     </div>
-    <button class="log-btn" onclick="openLog()">📖</button>
+    <button class="log-btn" onclick="openLog()" id="log-btn">
+      📖
+      <div class="red-dot hidden" id="log-red-dot"></div>
+    </button>
+    <button class="log-btn" onclick="openLetter()" id="letter-btn">
+      ✉️
+      <div class="red-dot hidden" id="letter-red-dot"></div>
+    </button>
   </div>
 
   <!-- Game viewport -->
@@ -1413,6 +1576,24 @@
   </div>
 </div>
 
+<!-- Letter modal -->
+<div class="letter-overlay hidden" id="letter-overlay">
+  <div class="letter-paper">
+    <div class="letter-stamp">💌</div>
+    <div class="letter-to">寄给：<span id="letter-to-name">TA</span></div>
+    <hr class="letter-divider">
+    <textarea class="letter-textarea" id="letter-input"
+      maxlength="50"
+      placeholder="写下想说的话..."
+      oninput="onLetterInput()"></textarea>
+    <div class="letter-counter" id="letter-counter">0 / 50</div>
+    <div class="letter-actions">
+      <button class="letter-cancel-btn" onclick="closeLetter()">取消</button>
+      <button class="letter-send-btn" onclick="sendLetter()">📮 寄出</button>
+    </div>
+  </div>
+</div>
+
 <script>
 // ===================================================
 // FIREBASE CONFIGURATION
@@ -1448,13 +1629,14 @@ let state = {
 };
 
 const ACTION_CONFIG = {
-  fart:  { emoji: '💨', pts: 5,  msg: '放了个臭屁朝你~',        anim: 'fart'  },
-  water: { emoji: '🥤', pts: 10, msg: '给你喂水喝~',            anim: 'arc'   },
-  food:  { emoji: '🍜', pts: 15, msg: '给你做了好吃的！',        anim: 'arc'   },
-  hug:   { emoji: '🤗', pts: 20, msg: '给你一个大大的抱抱！',    anim: 'hearts'},
-  kiss:  { emoji: '😘', pts: 25, msg: '亲亲你~💋',              anim: 'hearts'},
-  poke:  { emoji: '👆', pts: 3,  msg: '戳了你一下！',            anim: 'poke'  },
-  pet:   { emoji: '🐾', pts: 8,  msg: '在撸小橘~',              anim: 'pet'   }
+  fart:   { emoji: '💨', pts: 5,  msg: '放了个臭屁朝你~',        anim: 'fart'   },
+  water:  { emoji: '🥤', pts: 10, msg: '给你喂水喝~',            anim: 'arc'    },
+  food:   { emoji: '🍜', pts: 15, msg: '给你做了好吃的！',        anim: 'arc'    },
+  hug:    { emoji: '🤗', pts: 20, msg: '给你一个大大的抱抱！',    anim: 'hearts' },
+  kiss:   { emoji: '😘', pts: 25, msg: '亲亲你~💋',              anim: 'hearts' },
+  poke:   { emoji: '👆', pts: 3,  msg: '戳了你一下！',            anim: 'poke'   },
+  pet:    { emoji: '🐾', pts: 8,  msg: '在撸小橘~',              anim: 'pet'    },
+  letter: { emoji: '💌', pts: 10, msg: '给你写了一封信~',         anim: 'arc'    }
 };
 
 const DAILY_MAX = 200;
@@ -1612,15 +1794,11 @@ async function setPlayerRole(roomCode, role, uid) {
   lastSeenRef.onDisconnect().set(firebase.database.ServerValue.TIMESTAMP);
 }
 
-async function sendAction(roomCode, from, to, action) {
+async function sendAction(roomCode, from, to, action, content) {
   const ref = dbRef(`rooms/${roomCode}/pendingActions`).push();
-  await ref.set({
-    from,
-    to,
-    action,
-    timestamp: Date.now(),
-    seen: false
-  });
+  const entry = { from, to, action, timestamp: Date.now(), seen: false };
+  if (content) entry.content = content;
+  await ref.set(entry);
   // Update intimacy: daily + cumulative total
   const pts = ACTION_CONFIG[action].pts;
   const today = getEuropeDate();
@@ -1893,6 +2071,7 @@ async function enterGameScene(roomCode) {
   startGameListeners(roomCode);
 
   // Process pending notifications
+  checkRedDotOnLoad();
   setTimeout(() => processNotifications(), 800);
 
   // Start cat hunger decay check
@@ -1952,7 +2131,8 @@ function startGameListeners(roomCode) {
         // Small delay to avoid double-processing on page load
         if (state.initialized) {
           await markActionSeen(roomCode, snap.key);
-          playActionOnMe(d.action, d.from, d.timestamp, false);
+          setLogRedDot(true);
+          playActionOnMe(d.action, d.from, d.timestamp, false, d.content);
         }
       }
     });
@@ -2150,7 +2330,7 @@ function playOutgoingAnim(actionType) {
   }
 }
 
-function playActionOnMe(actionType, fromRole, timestamp, isReplay) {
+function playActionOnMe(actionType, fromRole, timestamp, isReplay, content) {
   const config = ACTION_CONFIG[actionType];
   const myElem = getCharElem(state.myRole);
 
@@ -2191,7 +2371,7 @@ function playActionOnMe(actionType, fromRole, timestamp, isReplay) {
   }
 
   // Show notification card
-  showActionNotif(config, fromRole, timestamp, isReplay);
+  showActionNotif(config, fromRole, timestamp, isReplay, content);
 }
 
 function playPetAnimation() {
@@ -2297,9 +2477,12 @@ async function processNotifications() {
 
   try {
     const actions = await getUnseenActions(state.roomCode, state.myRole);
+    if (actions.length > 0) {
+      setLogRedDot(true);
+    }
     for (const action of actions) {
       await markActionSeen(state.roomCode, action.id);
-      playActionOnMe(action.action, action.from, action.timestamp, true);
+      playActionOnMe(action.action, action.from, action.timestamp, true, action.content);
       await new Promise(r => setTimeout(r, 1200));
     }
   } catch (e) {
@@ -2309,9 +2492,13 @@ async function processNotifications() {
   }
 }
 
-function showActionNotif(config, fromRole, timestamp, isReplay) {
+function showActionNotif(config, fromRole, timestamp, isReplay, content) {
   const overlay = document.getElementById('notif-overlay');
   const senderName = fromRole === 'pig' ? '🐷 小猪' : '🐶 小狗';
+
+  const letterContent = content
+    ? `<div style="margin-top:6px;font-size:11px;color:#ffd93d;font-family:'PingFang SC',system-ui;background:#ffffff0a;padding:6px 8px;border-left:2px solid #ff6b9d;">${escapeHtml(content)}</div>`
+    : '';
 
   const card = document.createElement('div');
   card.className = 'notif-card';
@@ -2322,14 +2509,16 @@ function showActionNotif(config, fromRole, timestamp, isReplay) {
     </div>
     <div class="notif-body">
       <span class="notif-emoji">${config.emoji}</span>
-      <span class="notif-msg">${config.msg}</span>
+      <div>
+        <span class="notif-msg">${config.msg}</span>
+        ${letterContent}
+      </div>
     </div>
     <button class="notif-close" onclick="dismissNotif(this.parentElement)">×</button>
   `;
 
   overlay.appendChild(card);
-
-  setTimeout(() => dismissNotif(card), 4000);
+  setTimeout(() => dismissNotif(card), content ? 8000 : 4000);
 }
 
 function dismissNotif(card) {
@@ -2445,6 +2634,9 @@ async function openLog() {
   list.innerHTML = '<div class="log-empty">加载中...</div>';
   overlay.classList.remove('hidden');
 
+  // Clear red dot when opened
+  setLogRedDot(false);
+
   try {
     const since = Date.now() - 24 * 60 * 60 * 1000;
     const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
@@ -2456,8 +2648,6 @@ async function openLog() {
     snap.forEach(child => {
       items.push({ id: child.key, ...child.val() });
     });
-    // Also fetch seen actions from past 24h — pendingActions stores all (seen or not)
-    // Sort newest first
     items.sort((a, b) => b.timestamp - a.timestamp);
 
     if (items.length === 0) {
@@ -2471,11 +2661,15 @@ async function openLog() {
       const senderName = item.from === 'pig' ? '🐷 小猪' : '🐶 小狗';
       const targetName = item.to   === 'pig' ? '🐷 小猪' : '🐶 小狗';
       const senderClass = item.from === 'pig' ? 'log-sender-pig' : 'log-sender-dog';
+      const letterBody = item.action === 'letter' && item.content
+        ? `<div class="log-letter-body">${escapeHtml(item.content)}</div>`
+        : '';
       return `
-        <div class="log-item">
+        <div class="log-item${item.action === 'letter' ? ' letter-item' : ''}">
           <div class="log-emoji">${cfg.emoji}</div>
           <div class="log-info">
             <div class="log-msg">${cfg.msg}</div>
+            ${letterBody}
             <div class="log-meta">
               <span class="${senderClass}">${senderName}</span>
               <span>→ ${targetName}</span>
@@ -2494,6 +2688,83 @@ async function openLog() {
 function closeLog(event) {
   if (event && event.target !== document.getElementById('log-overlay')) return;
   document.getElementById('log-overlay').classList.add('hidden');
+}
+
+// ===================================================
+// ===================================================
+// LETTER (留言)
+// ===================================================
+function openLetter() {
+  const toName = state.partnerRole === 'pig' ? '🐷 小猪' : '🐶 小狗';
+  document.getElementById('letter-to-name').textContent = toName;
+  document.getElementById('letter-input').value = '';
+  document.getElementById('letter-counter').textContent = '0 / 50';
+  document.getElementById('letter-counter').classList.remove('warn');
+  document.getElementById('letter-overlay').classList.remove('hidden');
+  setTimeout(() => document.getElementById('letter-input').focus(), 100);
+}
+
+function closeLetter() {
+  document.getElementById('letter-overlay').classList.add('hidden');
+}
+
+function onLetterInput() {
+  const len = document.getElementById('letter-input').value.length;
+  const counter = document.getElementById('letter-counter');
+  counter.textContent = len + ' / 50';
+  counter.classList.toggle('warn', len >= 45);
+}
+
+async function sendLetter() {
+  const content = document.getElementById('letter-input').value.trim();
+  if (!content) return;
+
+  const btn = document.querySelector('.letter-send-btn');
+  btn.textContent = '寄出中...';
+  btn.disabled = true;
+
+  try {
+    await sendAction(state.roomCode, state.myRole, state.partnerRole, 'letter', content);
+    closeLetter();
+    // Show outgoing animation
+    playOutgoingAnim('letter');
+  } catch (e) {
+    console.error('Send letter failed:', e);
+  } finally {
+    btn.textContent = '📮 寄出';
+    btn.disabled = false;
+  }
+}
+
+// ===================================================
+// RED DOT
+// ===================================================
+function setLogRedDot(show) {
+  document.getElementById('log-red-dot').classList.toggle('hidden', !show);
+  // persist so it survives page reload until opened
+  if (show) {
+    localStorage.setItem('pigdog_unread_' + state.roomCode, '1');
+  } else {
+    localStorage.removeItem('pigdog_unread_' + state.roomCode);
+  }
+}
+
+function checkRedDotOnLoad() {
+  if (!state.roomCode) return;
+  const unread = localStorage.getItem('pigdog_unread_' + state.roomCode);
+  if (unread) setLogRedDot(true);
+}
+
+// ===================================================
+// ESCAPE HTML
+// ===================================================
+function escapeHtml(str) {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/\n/g, '<br>');
 }
 
 // ===================================================
