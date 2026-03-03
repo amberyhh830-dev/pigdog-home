@@ -1025,7 +1025,7 @@
           <button class="px-btn" style="font-size:7px; padding:8px 16px;" onclick="copyRoomCode()">📋 复制房间码</button>
           <div class="copy-hint mt-8" id="copy-hint"></div>
         </div>
-        <div class="waiting-text">等待对方加入...</div>
+        <button class="px-btn green w-full" onclick="enterSelectScene(state.roomCode)">进入角色选择 →</button>
         <button class="px-btn gray w-full" style="font-size:7px;" onclick="backToMain()">← 返回</button>
       </div>
     </div>
@@ -1232,7 +1232,7 @@ function genUID() {
 }
 
 function genRoomCode() {
-  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ';
   let code = '';
   for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
   return code;
@@ -1412,10 +1412,7 @@ function showCreatePanel() {
   state.roomCode = code;
   document.getElementById('display-room-code').textContent = code;
 
-  createRoom(code).then(() => {
-    // Listen for partner joining
-    listenForPartner(code);
-  }).catch(err => {
+  createRoom(code).catch(err => {
     console.error('Create room failed:', err);
   });
 }
