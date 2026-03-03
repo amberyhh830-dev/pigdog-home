@@ -2767,15 +2767,16 @@ function spawnParticle(opts) {
 }
 
 function playOutgoingAnim(actionType) {
-  const myPos = getCharPos(state.myRole);
+  const myPos      = getCharPos(state.myRole);
   const partnerPos = getCharPos(state.partnerRole);
-  const config = ACTION_CONFIG[actionType];
+  const config     = ACTION_CONFIG[actionType];
 
   const dx = partnerPos.x - myPos.x;
   const dy = partnerPos.y - myPos.y;
 
   switch (config.anim) {
     case 'fart':
+      // 从自己飞向对方
       for (let i = 0; i < 5; i++) {
         setTimeout(() => {
           spawnParticle({
@@ -2793,62 +2794,65 @@ function playOutgoingAnim(actionType) {
       break;
 
     case 'arc':
+      // 抛物线飞向对方
       spawnParticle({
         emoji: config.emoji,
-        x: myPos.x,
-        y: myPos.y,
-        tx: dx,
-        ty: dy,
-        dur: 1.0,
-        cls: 'particle-arc',
-        size: 28
+        x: myPos.x, y: myPos.y,
+        tx: dx, ty: dy,
+        dur: 1.0, cls: 'particle-arc', size: 28
       });
       break;
 
     case 'hearts':
-      const hearts = ['❤️', '💕', '💖', '💗', '💓'];
-      for (let i = 0; i < 6; i++) {
-        setTimeout(() => {
-          spawnParticle({
-            emoji: hearts[Math.floor(Math.random() * hearts.length)],
-            x: myPos.x + (Math.random() - 0.5) * 30,
-            y: myPos.y,
-            tx: (Math.random() - 0.5) * 80,
-            ty: -80 - Math.random() * 60,
-            dur: 1.0 + Math.random() * 0.5,
-            cls: 'heart-burst',
-            size: 18 + Math.floor(Math.random() * 14)
-          });
-        }, i * 80);
-      }
+      // 先飞一颗心到对方，然后在对方位置爆发
+      spawnParticle({
+        emoji: '❤️',
+        x: myPos.x, y: myPos.y,
+        tx: dx, ty: dy,
+        dur: 0.6, cls: 'particle-arc', size: 24
+      });
+      setTimeout(() => {
+        const hearts = ['❤️', '💕', '💖', '💗', '💓'];
+        for (let i = 0; i < 6; i++) {
+          setTimeout(() => {
+            spawnParticle({
+              emoji: hearts[Math.floor(Math.random() * hearts.length)],
+              x: partnerPos.x + (Math.random() - 0.5) * 30,
+              y: partnerPos.y,
+              tx: (Math.random() - 0.5) * 80,
+              ty: -80 - Math.random() * 60,
+              dur: 1.0 + Math.random() * 0.5,
+              cls: 'heart-burst',
+              size: 18 + Math.floor(Math.random() * 14)
+            });
+          }, i * 80);
+        }
+      }, 550);
       break;
 
     case 'poke':
-      // Just shake partner visually (handled in playActionOnMe)
+      // 飞向对方
       spawnParticle({
-        emoji: '👆',
-        x: myPos.x,
-        y: myPos.y,
-        tx: dx,
-        ty: dy,
-        dur: 0.8,
-        cls: 'particle-arc',
-        size: 24
+        emoji: actionType === 'butt' ? '🍑' : '👆',
+        x: myPos.x, y: myPos.y,
+        tx: dx, ty: dy,
+        dur: 0.8, cls: 'particle-arc', size: 24
       });
       break;
 
     case 'pet':
       playPetAnimation();
       break;
+
     case 'lullaby':
-      playLullabyAnimation(myPos);
-      break;
-    case 'poke':
+      // 先飞月亮到对方，然后在对方位置爆发星星
       spawnParticle({
-        emoji: actionType === 'butt' ? '🍑' : '👆',
+        emoji: '🌙',
         x: myPos.x, y: myPos.y,
-        tx: dx, ty: dy, dur: 0.8, cls: 'particle-arc', size: 24
+        tx: dx, ty: dy,
+        dur: 0.7, cls: 'particle-arc', size: 26
       });
+      setTimeout(() => playLullabyAnimation(partnerPos), 650);
       break;
   }
 }
