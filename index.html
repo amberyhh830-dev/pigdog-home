@@ -1162,12 +1162,13 @@
     <div class="room-tag">🏠 <span id="game-room-code">------</span></div>
     <div class="intimacy-wrap">
       <div class="intimacy-label">
-        <span id="intimacy-level-name">初识</span>
-        <span id="intimacy-score">0</span>
+        <span id="intimacy-level-name">今日好感</span>
+        <span id="intimacy-score">0 / 200</span>
       </div>
       <div class="intimacy-bar-bg">
         <div class="intimacy-bar-fill" id="intimacy-bar" style="width:0%"></div>
       </div>
+      <div style="font-size:5px; color:#555; margin-top:2px;">累计 <span id="intimacy-total">0</span> ❤️</div>
     </div>
   </div>
 
@@ -1298,7 +1299,8 @@ let state = {
   roomCode: null,
   myRole: null,       // 'pig' | 'dog'
   partnerRole: null,  // 'pig' | 'dog'
-  intimacy: 0,
+  intimacy: 0,        // today's daily score
+  intimacyTotal: 0,   // cumulative total
   catData: { mood: 'happy', hunger: 80, lastFed: Date.now(), petCount: 0 },
   isProcessingNotifs: false,
   listeners: {},
@@ -1316,12 +1318,14 @@ const ACTION_CONFIG = {
   pet:   { emoji: '🐾', pts: 8,  msg: '在撸小橘~',              anim: 'pet'   }
 };
 
+const DAILY_MAX = 200;
+
 const INTIMACY_LEVELS = [
-  { min: 0,   max: 100,  name: '初识',  emoji: '👀' },
-  { min: 100, max: 300,  name: '朋友',  emoji: '😊' },
-  { min: 300, max: 600,  name: '暧昧',  emoji: '💕' },
-  { min: 600, max: 1000, name: '恋人',  emoji: '💑' },
-  { min: 1000,max: 9999, name: '挚爱',  emoji: '💞' }
+  { min: 0,    name: '初识', emoji: '👀' },
+  { min: 500,  name: '朋友', emoji: '😊' },
+  { min: 1500, name: '暧昧', emoji: '💕' },
+  { min: 3000, name: '恋人', emoji: '💑' },
+  { min: 6000, name: '挚爱', emoji: '💞' }
 ];
 
 // ===================================================
@@ -1478,8 +1482,15 @@ async function sendAction(roomCode, from, to, action) {
     timestamp: Date.now(),
     seen: false
   });
-  // Update intimacy
+  // Update intimacy: daily + cumulative total
   const pts = ACTION_CONFIG[action].pts;
+  const today = getEuropeDate();
+  // Reset daily if new day
+  const dateSnap = await dbRef(`rooms/${roomCode}/dailyDate`).once('value');
+  if (dateSnap.val() !== today) {
+    await dbRef(`rooms/${roomCode}`).update({ dailyDate: today, dailyIntimacy: 0 });
+  }
+  await dbRef(`rooms/${roomCode}/dailyIntimacy`).transaction(cur => Math.min((cur || 0) + pts, DAILY_MAX));
   await dbRef(`rooms/${roomCode}/intimacy`).transaction(cur => (cur || 0) + pts);
 }
 
@@ -1726,7 +1737,9 @@ async function enterGameScene(roomCode) {
   // Load game data
   const data = await getRoomData(roomCode);
   if (data) {
-    if (data.intimacy !== undefined) updateIntimacyUI(data.intimacy);
+    const daily = await checkAndResetDaily(roomCode);
+    const total = data.intimacy || 0;
+    updateIntimacyUI(daily, total);
     if (data.cat) updateCatUI(data.cat);
   }
 
@@ -1748,11 +1761,19 @@ async function enterGameScene(roomCode) {
 }
 
 function startGameListeners(roomCode) {
-  // Intimacy
-  dbRef(`rooms/${roomCode}/intimacy`).on('value', snap => {
-    const val = snap.val() || 0;
-    state.intimacy = val;
-    updateIntimacyUI(val);
+  // Listen to both daily and cumulative intimacy
+  dbRef(`rooms/${roomCode}`).on('value', snap => {
+    const d = snap.val();
+    if (!d) return;
+    const daily = d.dailyIntimacy || 0;
+    const total = d.intimacy || 0;
+    // Check if date rolled over
+    if (d.dailyDate && d.dailyDate !== getEuropeDate()) {
+      // Will be reset next write; just show 0 for now
+      updateIntimacyUI(0, total);
+    } else {
+      updateIntimacyUI(daily, total);
+    }
   });
 
   // Partner online status
@@ -1814,36 +1835,57 @@ function updatePartnerStatus(online) {
 }
 
 // ===================================================
-// INTIMACY SYSTEM
 // ===================================================
-function updateIntimacyUI(score) {
-  state.intimacy = score;
+// INTIMACY SYSTEM (daily progress, resets at Europe midnight)
+// ===================================================
 
-  // Find level
-  let level = INTIMACY_LEVELS[0];
-  let prevMax = 0;
-  for (const l of INTIMACY_LEVELS) {
-    if (score >= l.min) {
-      level = l;
-      prevMax = l.min;
-    }
-  }
-
-  const range = level.max - level.min;
-  const progress = Math.min(100, ((score - level.min) / range) * 100);
-
-  document.getElementById('intimacy-level-name').textContent = level.name;
-  document.getElementById('intimacy-score').textContent = score;
-  document.getElementById('intimacy-bar').style.width = progress + '%';
+// Get today's date string in CET/CEST (Europe/Paris)
+function getEuropeDate() {
+  return new Date().toLocaleDateString('sv-SE', { timeZone: 'Europe/Paris' }); // "YYYY-MM-DD"
 }
 
-function checkLevelUp(oldScore, newScore) {
-  let oldLevel = null, newLevel = null;
-  for (const l of INTIMACY_LEVELS) {
-    if (oldScore >= l.min) oldLevel = l;
-    if (newScore >= l.min) newLevel = l;
+async function checkAndResetDaily(roomCode) {
+  const today = getEuropeDate();
+  const snap = await dbRef(`rooms/${roomCode}/dailyDate`).once('value');
+  const storedDate = snap.val();
+  if (storedDate !== today) {
+    // New day — reset daily score
+    await dbRef(`rooms/${roomCode}`).update({
+      dailyDate: today,
+      dailyIntimacy: 0
+    });
+    return 0;
   }
-  if (newLevel && oldLevel && newLevel.name !== oldLevel.name) {
+  const dSnap = await dbRef(`rooms/${roomCode}/dailyIntimacy`).once('value');
+  return dSnap.val() || 0;
+}
+
+function updateIntimacyUI(daily, total) {
+  state.intimacy = daily;
+  state.intimacyTotal = total;
+
+  const capped = Math.min(daily, DAILY_MAX);
+  const pct = (capped / DAILY_MAX) * 100;
+
+  document.getElementById('intimacy-score').textContent = capped + ' / ' + DAILY_MAX;
+  document.getElementById('intimacy-bar').style.width = pct + '%';
+  document.getElementById('intimacy-total').textContent = total;
+
+  // Level based on total cumulative score
+  let level = INTIMACY_LEVELS[0];
+  for (const l of INTIMACY_LEVELS) {
+    if (total >= l.min) level = l;
+  }
+  document.getElementById('intimacy-level-name').textContent = level.emoji + ' ' + level.name;
+}
+
+function checkLevelUp(oldTotal, newTotal) {
+  let oldLevel = INTIMACY_LEVELS[0], newLevel = INTIMACY_LEVELS[0];
+  for (const l of INTIMACY_LEVELS) {
+    if (oldTotal >= l.min) oldLevel = l;
+    if (newTotal >= l.min) newLevel = l;
+  }
+  if (newLevel.name !== oldLevel.name) {
     showLevelUp(newLevel);
   }
 }
@@ -1871,7 +1913,7 @@ async function doAction(actionType) {
   setTimeout(() => { state.actionCooldown = false; }, 800);
 
   const config = ACTION_CONFIG[actionType];
-  const oldScore = state.intimacy;
+  const oldTotal = state.intimacyTotal || 0;
 
   // Play animation on self (sending side shows outgoing anim)
   playOutgoingAnim(actionType);
@@ -1879,7 +1921,7 @@ async function doAction(actionType) {
   // Send to Firebase
   try {
     await sendAction(state.roomCode, state.myRole, state.partnerRole, actionType);
-    checkLevelUp(oldScore, state.intimacy + config.pts);
+    checkLevelUp(oldTotal, oldTotal + config.pts);
   } catch (e) {
     console.error('Send action failed:', e);
   }
