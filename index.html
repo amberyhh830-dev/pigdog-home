@@ -1125,14 +1125,19 @@
     /* ===== NOTIFICATION CARD ===== */
     .notif-overlay {
       position: fixed;
-      inset: 0;
+      top: 60px;
+      left: 0;
+      right: 0;
       z-index: 100;
       pointer-events: none;
       display: flex;
       flex-direction: column;
       align-items: center;
-      padding-top: 80px;
-      gap: 12px;
+      gap: 8px;
+      padding: 0 16px;
+      /* Only show top 2 cards; overflow hidden clips the rest */
+      max-height: 220px;
+      overflow: hidden;
     }
 
     .notif-card {
@@ -2585,6 +2590,11 @@ async function processNotifications() {
 
 function showActionNotif(config, fromRole, timestamp, isReplay, content) {
   const overlay = document.getElementById('notif-overlay');
+
+  // Keep at most 2 cards — remove oldest if already at limit
+  const existing = overlay.querySelectorAll('.notif-card');
+  if (existing.length >= 2) dismissNotif(existing[0]);
+
   const senderName = fromRole === 'pig' ? '🐷 小猪' : '🐶 小狗';
 
   const letterContent = content
@@ -2790,11 +2800,15 @@ async function loadLetterList() {
   const list = document.getElementById('letter-list');
   list.innerHTML = '<div class="log-empty">加载中...</div>';
   try {
-    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`)
-      .orderByChild('action').equalTo('letter').once('value');
+    // Fetch all actions and filter by type client-side
+    // (Firebase index not set up, orderByChild('action') may not work reliably)
+    const snap = await dbRef(`rooms/${state.roomCode}/pendingActions`).once('value');
 
     const items = [];
-    snap.forEach(child => items.push({ id: child.key, ...child.val() }));
+    snap.forEach(child => {
+      const d = child.val();
+      if (d && d.action === 'letter') items.push({ id: child.key, ...d });
+    });
     items.sort((a, b) => b.timestamp - a.timestamp);
 
     if (items.length === 0) {
